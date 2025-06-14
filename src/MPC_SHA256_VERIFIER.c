@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 int NUM_ROUNDS = 136;
 
@@ -33,8 +32,6 @@ int main(void)
     openmp_thread_setup();
 
     printf("Iterations of SHA: %d\n", NUM_ROUNDS);
-
-    clock_t begin = clock(), delta, deltaFiles;
 
     a as[NUM_ROUNDS];
     z zs[NUM_ROUNDS];
@@ -59,19 +56,12 @@ int main(void)
         printf("%02X", y[i]);
     }
     printf("\n");
+    printf("Loading files\n");
 
-    deltaFiles = clock() - begin;
-    int inMilliFiles = deltaFiles * 1000 / CLOCKS_PER_SEC;
-    printf("Loading files: %ju\n", (uintmax_t)inMilliFiles);
-
-    clock_t beginE = clock(), deltaE;
     int es[NUM_ROUNDS];
     H3(y, as, NUM_ROUNDS, es);
-    deltaE = clock() - beginE;
-    int inMilliE = deltaE * 1000 / CLOCKS_PER_SEC;
-    printf("Generating E: %ju\n", (uintmax_t)inMilliE);
+    printf("Generating E\n");
 
-    clock_t beginV = clock(), deltaV;
 #pragma omp parallel for
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
@@ -81,15 +71,7 @@ int main(void)
             printf("Not Verified %d\n", i);
         }
     }
-    deltaV = clock() - beginV;
-    int inMilliV = deltaV * 1000 / CLOCKS_PER_SEC;
-    printf("Verifying: %ju\n", (uintmax_t)inMilliV);
-
-    delta = clock() - begin;
-    int inMilli = delta * 1000 / CLOCKS_PER_SEC;
-
-    printf("Total time: %ju\n", (uintmax_t)inMilli);
-
+    printf("Verifying\n");
     openmp_thread_cleanup();
     cleanup_EVP();
     return EXIT_SUCCESS;

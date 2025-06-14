@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #define CH(e, f, g) ((e & f) ^ ((~e) & g)) // choose f if e = 0 and g if e = 1
 
@@ -507,7 +506,6 @@ int main(void)
     init_EVP();
     openmp_thread_setup(); // OpenMP = Multi Threading
 
-    //
     unsigned char garbage[4];
     if (RAND_bytes(garbage, 4) != 1)
     {
@@ -530,7 +528,6 @@ int main(void)
         input[j] = userInput[j];
     }
 
-    clock_t begin = clock(), delta, deltaA;
     unsigned char rs[NUM_ROUNDS][3][4];
     unsigned char keys[NUM_ROUNDS][3][16];
     a as[NUM_ROUNDS];
@@ -538,7 +535,6 @@ int main(void)
     int totalCrypto = 0;
 
     // Generating keys
-    clock_t beginCrypto = clock(), deltaCrypto;
     if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
     {
         printf("RAND_bytes failed crypto, aborting\n");
@@ -549,12 +545,8 @@ int main(void)
         printf("RAND_bytes failed crypto, aborting\n");
         return 0;
     }
-    deltaCrypto = clock() - beginCrypto;
-    int inMilliCrypto = deltaCrypto * 1000 / CLOCKS_PER_SEC;
-    totalCrypto = inMilliCrypto;
 
     // Sharing secrets
-    clock_t beginSS = clock(), deltaSS;
     unsigned char shares[NUM_ROUNDS][3][i];
     if (RAND_bytes(shares, NUM_ROUNDS * 3 * i) != 1)
     {
@@ -570,12 +562,8 @@ int main(void)
             shares[k][2][j] = input[j] ^ shares[k][0][j] ^ shares[k][1][j];
         }
     }
-    deltaSS = clock() - beginSS;
-    int inMilli = deltaSS * 1000 / CLOCKS_PER_SEC;
-    totalSS = inMilli;
 
     // Generating randomness
-    clock_t beginRandom = clock(), deltaRandom;
     unsigned char *randomness[NUM_ROUNDS][3];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
@@ -587,12 +575,7 @@ int main(void)
         }
     }
 
-    deltaRandom = clock() - beginRandom;
-    inMilli = deltaRandom * 1000 / CLOCKS_PER_SEC;
-    totalRandom = inMilli;
-
     // Running MPC-SHA2
-    clock_t beginSha = clock(), deltaSha;
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -602,12 +585,8 @@ int main(void)
             free(randomness[k][j]);
         }
     }
-    deltaSha = clock() - beginSha;
-    inMilli = deltaSha * 1000 / CLOCKS_PER_SEC;
-    totalSha = inMilli;
 
     // Committing
-    clock_t beginHash = clock(), deltaHash;
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -619,15 +598,8 @@ int main(void)
         H(keys[k][2], localViews[k][2], rs[k][2], &hash1);
         memcpy(as[k].h[2], &hash1, 32);
     }
-    deltaHash = clock() - beginHash;
-    inMilli = deltaHash * 1000 / CLOCKS_PER_SEC;
-    totalHash += inMilli;
-
-    deltaA = clock() - begin;
-    int inMilliA = deltaA * 1000 / CLOCKS_PER_SEC;
 
     // Generating E
-    clock_t beginE = clock(), deltaE;
     int es[NUM_ROUNDS];
     uint32_t finalHash[8];
     for (int j = 0; j < 8; j++)
@@ -635,11 +607,8 @@ int main(void)
         finalHash[j] = as[0].yp[0][j] ^ as[0].yp[1][j] ^ as[0].yp[2][j];
     }
     H3(finalHash, as, NUM_ROUNDS, es);
-    deltaE = clock() - beginE;
-    int inMilliE = deltaE * 1000 / CLOCKS_PER_SEC;
 
     // Packing Z
-    clock_t beginZ = clock(), deltaZ;
     z *zs = malloc(sizeof(z) * NUM_ROUNDS);
 
 #pragma omp parallel for
@@ -647,11 +616,8 @@ int main(void)
     {
         zs[i] = prove(es[i], keys[i], rs[i], localViews[i]);
     }
-    deltaZ = clock() - beginZ;
-    int inMilliZ = deltaZ * 1000 / CLOCKS_PER_SEC;
 
     // Writing to file
-    clock_t beginWrite = clock();
     FILE *file;
 
     char outputFile[3 * sizeof(int) + 8];
@@ -667,16 +633,10 @@ int main(void)
 
     fclose(file);
 
-    clock_t deltaWrite = clock() - beginWrite;
     free(zs);
-    int inMilliWrite = deltaWrite * 1000 / CLOCKS_PER_SEC;
-
-    delta = clock() - begin;
-    inMilli = delta * 1000 / CLOCKS_PER_SEC;
-
     int sumOfParts = 0;
 
-    printf("Generating A: %ju\n", (uintmax_t)inMilliA);
+    printf("Generating A\n");
     printf("	Generating keys: %ju\n", (uintmax_t)totalCrypto);
     sumOfParts += totalCrypto;
     printf("	Generating randomness: %ju\n", (uintmax_t)totalRandom);
@@ -688,12 +648,11 @@ int main(void)
     printf("	Committing: %ju\n", (uintmax_t)totalHash);
     sumOfParts += totalHash;
     printf("	*Accounted for*: %ju\n", (uintmax_t)sumOfParts);
-    printf("Generating E: %ju\n", (uintmax_t)inMilliE);
-    printf("Packing Z: %ju\n", (uintmax_t)inMilliZ);
-    printf("Writing file: %ju\n", (uintmax_t)inMilliWrite);
-    printf("Total: %d\n", inMilli);
+    printf("Generating E\n");
+    printf("Packing Z\n");
+    printf("Writing file\n");
     printf("\n");
-    printf("Proof output to file %s", outputFile);
+    printf("Proof output to file %s\n", outputFile);
 
     openmp_thread_cleanup();
     cleanup_EVP();
