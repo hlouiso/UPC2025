@@ -430,8 +430,7 @@ int secretShare(unsigned char *input, int numBytes, unsigned char output[3][numB
     return 0;
 }
 
-a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], unsigned char rs[3][4],
-         View views[3])
+a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], View views[3])
 {
 
     unsigned char *inputs[3];
@@ -574,7 +573,7 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = commit(i, shares[k], randomness[k], rs[k], localViews[k]);
+        as[k] = commit(i, shares[k], randomness[k], localViews[k]);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);
