@@ -71,7 +71,7 @@ int main(void)
             printf("Not Verified %d\n", i);
         }
     }
-    printf("Verifying\n");
+    printf("Verified well !\n");
     openmp_thread_cleanup();
     cleanup_EVP();
     return EXIT_SUCCESS;

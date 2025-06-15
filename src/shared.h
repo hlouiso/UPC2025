@@ -1,11 +1,3 @@
-/*
-============================================================================
-Name        : shared.h
-Author      : Sobuno
-Version     : 0.1
-Description : Common functions for the SHA-256 prover and verifier
-============================================================================
-*/
 #include <stdint.h>
 #include <string.h>
 #ifndef SHARED_H_
