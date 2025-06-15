@@ -8,10 +8,6 @@
 
 #define CH(e, f, g) ((e & f) ^ ((~e) & g)) // choose f if e = 0 and g if e = 1
 
-int totalRandom = 0;
-int totalSha = 0;
-int totalSS = 0;
-int totalHash = 0;
 int NUM_ROUNDS = 136;
 
 uint32_t rand32()
@@ -46,7 +42,7 @@ void mpc_AND(uint32_t x[3], uint32_t y[3], uint32_t z[3], unsigned char *randomn
 {
     uint32_t r[3] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount),
                      getRandom32(randomness[2], *randCount)};
-    *randCount += 4;
+    *randCount += 4; // Because 32 bits = 4 octets
     uint32_t t[3] = {0};
 
     t[0] = (x[0] & y[1]) ^ (x[1] & y[0]) ^ (x[0] & y[0]) ^ r[0] ^ r[1];
@@ -532,7 +528,6 @@ int main(void)
     unsigned char keys[NUM_ROUNDS][3][16];
     a as[NUM_ROUNDS];
     View localViews[NUM_ROUNDS][3];
-    int totalCrypto = 0;
 
     // Generating keys
     if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
@@ -634,27 +629,5 @@ int main(void)
     fclose(file);
 
     free(zs);
-    int sumOfParts = 0;
-
-    printf("Generating A\n");
-    printf("	Generating keys: %ju\n", (uintmax_t)totalCrypto);
-    sumOfParts += totalCrypto;
-    printf("	Generating randomness: %ju\n", (uintmax_t)totalRandom);
-    sumOfParts += totalRandom;
-    printf("	Sharing secrets: %ju\n", (uintmax_t)totalSS);
-    sumOfParts += totalSS;
-    printf("	Running MPC-SHA2: %ju\n", (uintmax_t)totalSha);
-    sumOfParts += totalSha;
-    printf("	Committing: %ju\n", (uintmax_t)totalHash);
-    sumOfParts += totalHash;
-    printf("	*Accounted for*: %ju\n", (uintmax_t)sumOfParts);
-    printf("Generating E\n");
-    printf("Packing Z\n");
-    printf("Writing file\n");
-    printf("\n");
-    printf("Proof output to file %s\n", outputFile);
-
-    openmp_thread_cleanup();
-    cleanup_EVP();
     return EXIT_SUCCESS;
 }
