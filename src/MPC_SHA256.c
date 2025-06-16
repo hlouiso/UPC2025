@@ -326,6 +326,7 @@ a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomn
                               hashes[2][i * 4 + 3];
         *countY += 1;
     }
+
     free(randCount);
     free(countY);
     free(hashes[0]);

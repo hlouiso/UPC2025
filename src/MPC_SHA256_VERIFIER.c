@@ -60,16 +60,23 @@ int main(void)
     int es[NUM_ROUNDS];
     H3(y, as, NUM_ROUNDS, es);
 
+    bool consistent;
+    consistent = true;
 #pragma omp parallel for
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
         int verifyResult = verify(as[i], es[i], zs[i]);
         if (verifyResult != 0)
         {
-            printf("Not Verified %d\n", i);
+            printf("Not Verified, round %d is inconsistent\n", i);
+            consistent = false;
         }
     }
-    printf("Verified well !\n");
+
+    if (consistent)
+    {
+        printf("Verified well !\n");
+    }
     openmp_thread_cleanup();
     cleanup_EVP();
     return EXIT_SUCCESS;
