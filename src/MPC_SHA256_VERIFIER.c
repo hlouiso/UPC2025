@@ -56,11 +56,9 @@ int main(void)
         printf("%02X", y[i]);
     }
     printf("\n");
-    printf("Loading files\n");
 
     int es[NUM_ROUNDS];
     H3(y, as, NUM_ROUNDS, es);
-    printf("Generating E\n");
 
 #pragma omp parallel for
     for (int i = 0; i < NUM_ROUNDS; i++)

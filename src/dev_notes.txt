@@ -1,0 +1,5 @@
+In mpc_sha_256(), randcount was loccaly declared (set at 0).
+As I want multiple calls of mpc_sha_256(), I need to set a roundCount in parameter.
+Il faut faire ça dans la fonction commit
+
+Suppriession de plusieurs fonctions du prover.c car jamais appelées
