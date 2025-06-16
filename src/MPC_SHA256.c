@@ -319,7 +319,6 @@ a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomn
     {
         views[0].y[*countY] = (hashes[0][i * 4] << 24) | (hashes[0][i * 4 + 1] << 16) | (hashes[0][i * 4 + 2] << 8) |
                               hashes[0][i * 4 + 3];
-
         views[1].y[*countY] = (hashes[1][i * 4] << 24) | (hashes[1][i * 4 + 1] << 16) | (hashes[1][i * 4 + 2] << 8) |
                               hashes[1][i * 4 + 3];
         views[2].y[*countY] = (hashes[2][i * 4] << 24) | (hashes[2][i * 4 + 1] << 16) | (hashes[2][i * 4 + 2] << 8) |
@@ -396,8 +395,6 @@ int main(void)
 
     unsigned char rs[NUM_ROUNDS][3][4];
     unsigned char keys[NUM_ROUNDS][3][16];
-    a as[NUM_ROUNDS];
-    View localViews[NUM_ROUNDS][3];
 
     // Generating keys
     if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
@@ -442,6 +439,8 @@ int main(void)
     }
 
     // Running MPC-SHA2
+    a as[NUM_ROUNDS];
+    View localViews[NUM_ROUNDS][3];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
