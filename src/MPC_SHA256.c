@@ -175,7 +175,7 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
 }
 
 int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
-               View views[3], int *countY)
+               View views[3], int *countY, int *randCount)
 {
 
     if (numBits > 447)
@@ -183,8 +183,6 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         printf("Input too long, aborting!");
         return -1;
     }
-
-    int *randCount = calloc(1, sizeof(int));
 
     int chars = numBits >> 3;
     unsigned char *chunks[3];
@@ -296,9 +294,6 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         results[1][i * 4 + 3] = hHa[i][1];
         results[2][i * 4 + 3] = hHa[i][2];
     }
-    printf("%d\n", *randCount); // debug
-    free(randCount);
-
     return 0;
 }
 
@@ -316,7 +311,8 @@ a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomn
     hashes[2] = malloc(32);
 
     int *countY = calloc(1, sizeof(int));
-    mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY);
+    int *randCount = calloc(1, sizeof(int));
+    mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY, randCount);
 
     // Explicitly add y to view
     for (int i = 0; i < 8; i++)
@@ -330,6 +326,7 @@ a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomn
                               hashes[2][i * 4 + 3];
         *countY += 1;
     }
+    free(randCount);
     free(countY);
     free(hashes[0]);
     free(hashes[1]);
@@ -432,13 +429,14 @@ int main(void)
 
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
+    int Bytes_Needed = 2912;
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
         for (int j = 0; j < 3; j++)
         {
-            randomness[k][j] = malloc(2912 * sizeof(unsigned char));
-            getAllRandomness(keys[k][j], randomness[k][j]);
+            randomness[k][j] = malloc(Bytes_Needed * sizeof(unsigned char));
+            getAllRandomness(keys[k][j], randomness[k][j], Bytes_Needed);
         }
     }
 

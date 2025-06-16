@@ -75,16 +75,17 @@ EVP_CIPHER_CTX setupAES(unsigned char key[16])
     return ctx;
 }
 
-void getAllRandomness(unsigned char key[16], unsigned char randomness[2912])
+void getAllRandomness(unsigned char key[16], unsigned char *randomness, int Bytes_Needed)
 {
-    // Generate randomness: We use 728*32 bit of randomness per key.
+    // Generate randomness: We will use 728*32 bit of randomness per key.
     // Since AES block size is 128 bit, we need to run 728*32/128 = 182 iterations
 
+    int iterations = Bytes_Needed * 8 / 128;
     EVP_CIPHER_CTX ctx;
     ctx = setupAES(key);
     unsigned char *plaintext = (unsigned char *)"0000000000000000";
     int len;
-    for (int j = 0; j < 182; j++)
+    for (int j = 0; j < iterations; j++)
     {
         if (1 != EVP_EncryptUpdate(&ctx, &randomness[j * 16], &len, plaintext, strlen((char *)plaintext)))
             handleErrors();
@@ -378,9 +379,10 @@ int verify(a a, int e, z z)
 
     free(result);
 
-    unsigned char randomness[2][2912];
-    getAllRandomness(z.ke, randomness[0]);
-    getAllRandomness(z.ke1, randomness[1]);
+    int Bytes_Needed = 2912;
+    unsigned char randomness[2][Bytes_Needed];
+    getAllRandomness(z.ke, randomness[0], Bytes_Needed);
+    getAllRandomness(z.ke1, randomness[1], Bytes_Needed);
 
     int *randCount = calloc(1, sizeof(int));
     int *countY = calloc(1, sizeof(int));
