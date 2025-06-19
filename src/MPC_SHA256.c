@@ -377,14 +377,14 @@ int main(void)
         return 0;
     }
 
-    printf("Please enter the client's commitment");
-    char userInput[55]; // 55 is max length as we only support 447 bits = 55.875 bytes
-    fgets(userInput, sizeof(userInput), stdin);
+    /* Getting m*/
+    char *userInput = NULL;
+    size_t bufferSize = 0;
+    printf("Please enter your message:\n");
+    getline(&userInput, &bufferSize, stdin);
+    printf("You entered: %s", userInput);
 
-    int i = strlen(userInput) - 1;
-    printf("String length: %d\n", i);
-
-    printf("Iterations of SHA: %d\n", NUM_ROUNDS);
+    /* Computing h(m) */
 
     unsigned char input[i];
     for (int j = 0; j < i; j++)
