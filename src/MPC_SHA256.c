@@ -184,7 +184,7 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         return -1;
     }
 
-    int chars = numBits >> 3;
+    int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
 
@@ -300,7 +300,6 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
 a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], unsigned char rs[3][4],
          View views[3])
 {
-
     unsigned char *inputs[3];
     inputs[0] = shares[0];
     inputs[1] = shares[1];
@@ -378,7 +377,7 @@ int main(void)
         return 0;
     }
 
-    printf("Enter the string to be hashed (Max 55 characters): ");
+    printf("Please enter the client's commitment");
     char userInput[55]; // 55 is max length as we only support 447 bits = 55.875 bytes
     fgets(userInput, sizeof(userInput), stdin);
 
