@@ -448,7 +448,7 @@ int main(void)
 
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
-    int Bytes_Needed = 2912;
+    int Bytes_Needed = 2912 * 300;
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
