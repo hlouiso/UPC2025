@@ -448,7 +448,8 @@ int main(void)
 
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
-    int Bytes_Needed = 2912 * 300;
+    int Bytes_Needed = 2912;
+    View localViews[NUM_ROUNDS][3];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -456,12 +457,12 @@ int main(void)
         {
             randomness[k][j] = malloc(Bytes_Needed * sizeof(unsigned char));
             getAllRandomness(keys[k][j], randomness[k][j], Bytes_Needed);
+            localViews[k][j].y = malloc(ySize * sizeof(uint32_t));
         }
     }
 
     // Running MPC-SHA2
     a as[NUM_ROUNDS];
-    View localViews[NUM_ROUNDS][3];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
