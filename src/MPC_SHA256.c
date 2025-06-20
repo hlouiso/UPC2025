@@ -380,16 +380,20 @@ int main(void)
     size_t bufferSize = 0;
     printf("Please enter your message:\n");
     getline(&userInput, &bufferSize, stdin);
+    userInput[strlen(userInput) - 1] = '\0'; // to remove '\n' at the end
     printf("You entered: %s", userInput);
 
     // Computing h(m)
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)userInput, strlen(userInput), hash);
+    free(userInput);
 
     // printing digest
     printf("Message digest is:\n");
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
         printf("%02X", hash[i]);
+    }
     printf("\n");
 
     // Getting commitment
@@ -436,7 +440,7 @@ int main(void)
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
 
-        for (int j = 0; j < i; j++)
+        for (int j = 0; j < INPUT_LEN; j++)
         {
             shares[k][2][j] = input[j] ^ shares[k][0][j] ^ shares[k][1][j];
         }
@@ -461,7 +465,7 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = commit(i, shares[k], randomness[k], rs[k], localViews[k]);
+        as[k] = commit(INPUT_LEN, shares[k], randomness[k], rs[k], localViews[k]);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);

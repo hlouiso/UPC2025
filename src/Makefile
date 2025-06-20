@@ -16,4 +16,4 @@ all: ../prover ../verifier
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o ../prover ../verifier
+	rm -f *.o ../prover ../verifier ../out*
