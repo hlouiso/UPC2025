@@ -2,6 +2,8 @@
     "files.associations": {
         "string.h": "c",
         "stdlib.h": "c",
-        "evp.h": "c"
+        "evp.h": "c",
+        "err.h": "c",
+        "rand.h": "c"
     }
 }

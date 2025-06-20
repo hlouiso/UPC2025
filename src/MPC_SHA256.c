@@ -172,6 +172,21 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
     mpc_XOR(t0, g, z);
 }
 
+void mpc_OR(uint32_t x[3], uint32_t y[3], uint32_t z[3], unsigned char *randomness[3], int *randCount, View views[3],
+            int *countY)
+{
+    uint32_t tmp[3], tmp2[3];
+
+    // tmp = x ^ y
+    mpc_XOR(x, y, tmp);
+
+    // tmp2 = x & y
+    mpc_AND(x, y, tmp2, randomness, randCount, views, countY);
+
+    // z = x ^ y ^ (x & y)
+    mpc_XOR(tmp, tmp2, z);
+}
+
 int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
                View views[3], int *countY, int *randCount)
 {
@@ -439,7 +454,6 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-
         for (int j = 0; j < INPUT_LEN; j++)
         {
             shares[k][2][j] = input[j] ^ shares[k][0][j] ^ shares[k][1][j];
