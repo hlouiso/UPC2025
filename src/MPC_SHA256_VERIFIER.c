@@ -14,8 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-int NUM_ROUNDS = 136;
-
 void printbits(uint32_t n)
 {
     if (n)

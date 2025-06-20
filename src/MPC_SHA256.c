@@ -8,8 +8,6 @@
 
 #define CH(e, f, g) ((e & f) ^ ((~e) & g)) // choose f if e = 0 and g if e = 1
 
-int NUM_ROUNDS = 136;
-
 void printbits(uint32_t n)
 {
     if (n)
@@ -377,20 +375,40 @@ int main(void)
         return 0;
     }
 
-    /* Getting m*/
+    // Getting m
     char *userInput = NULL;
     size_t bufferSize = 0;
     printf("Please enter your message:\n");
     getline(&userInput, &bufferSize, stdin);
     printf("You entered: %s", userInput);
 
-    /* Computing h(m) */
+    // Computing h(m)
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256((unsigned char *)userInput, strlen(userInput), hash);
 
-    unsigned char input[i];
-    for (int j = 0; j < i; j++)
+    // printing digest
+    printf("Message digest is:\n");
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+        printf("%02X", hash[i]);
+    printf("\n");
+
+    // Getting commitment
+    char hexInput[2 * COMMIT_LEN + 1];
+    unsigned char commitment[COMMIT_LEN];
+
+    printf("Enter your commitment (46 hex chars):\n");
+    fgets(hexInput, sizeof(hexInput), stdin);
+
+    for (int i = 0; i < COMMIT_LEN; i++)
     {
-        input[j] = userInput[j];
+        unsigned int byte;
+        sscanf(&hexInput[i * 2], "%2x", &byte);
+        commitment[i] = (unsigned char)byte;
     }
+
+    unsigned char input[INPUT_LEN];
+    memcpy(input, hash, 32);
+    memcpy(input + 32, commitment, 23);
 
     unsigned char rs[NUM_ROUNDS][3][4];
     unsigned char keys[NUM_ROUNDS][3][16];
@@ -408,8 +426,8 @@ int main(void)
     }
 
     // Sharing secrets
-    unsigned char shares[NUM_ROUNDS][3][i];
-    if (RAND_bytes(shares, NUM_ROUNDS * 3 * i) != 1)
+    unsigned char shares[NUM_ROUNDS][3][INPUT_LEN];
+    if (RAND_bytes(shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
     {
         printf("RAND_bytes failed crypto, aborting\n");
         return 0;
