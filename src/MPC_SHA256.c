@@ -8,15 +8,6 @@
 
 #define CH(e, f, g) ((e & f) ^ ((~e) & g)) // choose f if e = 0 and g if e = 1
 
-void printbits(uint32_t n)
-{
-    if (n)
-    {
-        printbits(n >> 1);
-        printf("%d", n & 1);
-    }
-}
-
 void mpc_XOR(uint32_t x[3], uint32_t y[3], uint32_t z[3])
 {
     z[0] = x[0] ^ y[0];
@@ -378,10 +369,9 @@ int main(void)
     // Getting m
     char *userInput = NULL;
     size_t bufferSize = 0;
-    printf("Please enter your message:\n");
+    printf("\nPlease enter your message:\n");
     getline(&userInput, &bufferSize, stdin);
     userInput[strlen(userInput) - 1] = '\0'; // to remove '\n' at the end
-    printf("You entered: %s", userInput);
 
     // Computing h(m)
     unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -389,35 +379,43 @@ int main(void)
     free(userInput);
 
     // printing digest
-    printf("Message digest is:\n");
+    printf("\nMessage digest is:\n");
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
     {
         printf("%02X", hash[i]);
     }
     printf("\n");
 
-    // Getting commitment
+    // Getting commitment key
     char hexInput[2 * COMMIT_LEN + 1];
-    unsigned char commitment[COMMIT_LEN];
+    unsigned char commitment_key[COMMIT_LEN];
 
-    printf("Enter your commitment (46 hex chars):\n");
+    printf("\nEnter your commitment (46 hex chars):\n");
     fgets(hexInput, sizeof(hexInput), stdin);
 
     for (int i = 0; i < COMMIT_LEN; i++)
     {
         unsigned int byte;
         sscanf(&hexInput[i * 2], "%2x", &byte);
-        commitment[i] = (unsigned char)byte;
+        commitment_key[i] = (unsigned char)byte;
     }
 
     unsigned char input[INPUT_LEN];
     memcpy(input, hash, 32);
-    memcpy(input + 32, commitment, 23);
+    memcpy(input + 32, commitment_key, 23);
 
+    // Showing the commitment
+    unsigned char finalHashed[SHA256_DIGEST_LENGTH];
+    SHA256(input, INPUT_LEN, finalHashed);
+    printf("\nYour final hash is h(h(m)||r):\n");
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+        printf("%02X", finalHashed[i]);
+    printf("\n\n");
+
+    // Generating keys
     unsigned char rs[NUM_ROUNDS][3][4];
     unsigned char keys[NUM_ROUNDS][3][16];
 
-    // Generating keys
     if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
     {
         printf("RAND_bytes failed crypto, aborting\n");
@@ -439,7 +437,6 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-
         for (int j = 0; j < INPUT_LEN; j++)
         {
             shares[k][2][j] = input[j] ^ shares[k][0][j] ^ shares[k][1][j];
@@ -504,21 +501,29 @@ int main(void)
         zs[i] = prove(es[i], keys[i], rs[i], localViews[i]);
     }
 
-    // Writing to file
-    FILE *file;
+    /* ============================================== Writing to file ============================================== */
 
-    char outputFile[3 * sizeof(int) + 8];
-    sprintf(outputFile, "out%i.bin", NUM_ROUNDS);
-    file = fopen(outputFile, "wb");
-    if (!file)
-    {
-        printf("Unable to open file!");
-        return 1;
-    }
+    /* … includes & code inchangés … */
+
+    FILE *file = fopen("proof.bin", "wb");
+
+    /* 1. on écrit le tableau des a */
     fwrite(as, sizeof(a), NUM_ROUNDS, file);
-    fwrite(zs, sizeof(z), NUM_ROUNDS, file);
+
+    /* 2. on écrit round par round : z , ve.y , ve1.y */
+    for (int i = 0; i < NUM_ROUNDS; ++i)
+    {
+        /* structure z (pointeurs compris) */
+        fwrite(&zs[i], sizeof(z), 1, file);
+
+        /* contenu réel des deux buffers y */
+        fwrite(zs[i].ve.y, sizeof(uint32_t), ySize, file);
+        fwrite(zs[i].ve1.y, sizeof(uint32_t), ySize, file);
+    }
 
     fclose(file);
+
+    /* ============================================================================================================= */
 
     free(zs);
     return EXIT_SUCCESS;
