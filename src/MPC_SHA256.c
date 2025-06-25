@@ -503,20 +503,14 @@ int main(void)
 
     /* ============================================== Writing to file ============================================== */
 
-    /* … includes & code inchangés … */
-
     FILE *file = fopen("proof.bin", "wb");
 
-    /* 1. on écrit le tableau des a */
     fwrite(as, sizeof(a), NUM_ROUNDS, file);
 
-    /* 2. on écrit round par round : z , ve.y , ve1.y */
     for (int i = 0; i < NUM_ROUNDS; ++i)
     {
-        /* structure z (pointeurs compris) */
         fwrite(&zs[i], sizeof(z), 1, file);
 
-        /* contenu réel des deux buffers y */
         fwrite(zs[i].ve.y, sizeof(uint32_t), ySize, file);
         fwrite(zs[i].ve1.y, sizeof(uint32_t), ySize, file);
     }
