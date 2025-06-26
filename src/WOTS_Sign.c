@@ -29,6 +29,11 @@ int main(void)
     int bits[NUM_BITS] = {0};
 
     printf("Entrez 256 bits en hexadécimal MAJUSCULE (64 caractères) : ");
+    if (scanf("%64s", hex_input) != 1)
+    {
+        fprintf(stderr, "Erreur : lecture impossible.\n");
+        return EXIT_FAILURE;
+    }
 
     for (int i = 0; i < 64; ++i)
     {
@@ -51,7 +56,6 @@ int main(void)
     }
 
     FILE *fp = fopen("signature.txt", "w");
-
     for (int i = 0; i < NUM_BITS; ++i)
     {
         if (bits[i] == 0)
@@ -59,10 +63,9 @@ int main(void)
         else
             write_hex_line(fp, pub[i], SHA256_DIGEST_LENGTH);
     }
+    fclose(fp);
 
-    fputc('\n', fp);
-    fputc('\n', fp);
-
+    fp = fopen("public_key.txt", "w");
     for (int i = 0; i < NUM_BITS; ++i)
         write_hex_line(fp, pub[i], SHA256_DIGEST_LENGTH);
 

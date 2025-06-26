@@ -286,8 +286,8 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
     return 0;
 }
 
-a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], unsigned char rs[3][4],
-         View views[3])
+a building_views(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], unsigned char rs[3][4],
+                 View views[3])
 {
     unsigned char *inputs[3];
     inputs[0] = shares[0];
@@ -314,6 +314,7 @@ a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomn
         *countY += 1;
     }
 
+    printf("%d\n\n", *countY);
     free(randCount);
     free(countY);
     free(hashes[0]);
@@ -427,6 +428,38 @@ int main(void)
         return 0;
     }
 
+    // Getting public_key
+    FILE *fp = fopen("public_key.txt", "r");
+    char public_key[8192];
+    for (int i = 0; i < 256; ++i)
+        for (int j = 0; j < 32; ++j)
+        {
+            int c1 = fgetc(fp);
+            int c2 = fgetc(fp);
+
+            c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
+            c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
+
+            public_key[i * 32 + j] = (char)((c1 << 4) | c2);
+        }
+    fclose(fp);
+
+    // Getting WOTS signature
+    fp = fopen("signature.txt", "r");
+    char sigma[8192];
+    for (int i = 0; i < 256; ++i)
+        for (int j = 0; j < 32; ++j)
+        {
+            int c1 = fgetc(fp);
+            int c2 = fgetc(fp);
+
+            c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
+            c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
+
+            sigma[i * 32 + j] = (char)((c1 << 4) | c2);
+        }
+    fclose(fp);
+
     // Sharing secrets
     unsigned char shares[NUM_ROUNDS][3][INPUT_LEN];
     if (RAND_bytes(shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
@@ -463,7 +496,7 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = commit(INPUT_LEN, shares[k], randomness[k], rs[k], localViews[k]);
+        as[k] = building_views(INPUT_LEN, shares[k], randomness[k], rs[k], localViews[k]);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);
