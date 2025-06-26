@@ -14,9 +14,12 @@
 
 #define VERBOSE FALSE
 
-int COMMIT_LEN = 23;
+int COMMIT_KEY_LEN = 23;
 int NUM_ROUNDS = 136;
 int INPUT_LEN = 55;
+int SECRET_LEN = 8256;
+/* 8256 bytes = COMMIT_KEY_LEN padded to 32 bytes + Digest len (32 bytes also) + Sigma size (wots signature: 256 * 32
+ * bytes) */
 
 static const uint32_t hA[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
                                0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
@@ -35,7 +38,7 @@ int ySize = 736;
 
 typedef struct
 {
-    unsigned char x[64];
+    unsigned char x[23];
     uint32_t *y;
 } View;
 

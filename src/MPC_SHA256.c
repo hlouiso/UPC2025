@@ -388,13 +388,13 @@ int main(void)
     printf("\n");
 
     // Getting commitment key
-    char hexInput[2 * COMMIT_LEN + 1];
-    unsigned char commitment_key[COMMIT_LEN];
+    char hexInput[2 * COMMIT_KEY_LEN + 1];
+    unsigned char commitment_key[COMMIT_KEY_LEN];
 
     printf("\nEnter your commitment (46 hex chars):\n");
     fgets(hexInput, sizeof(hexInput), stdin);
 
-    for (int i = 0; i < COMMIT_LEN; i++)
+    for (int i = 0; i < COMMIT_KEY_LEN; i++)
     {
         unsigned int byte;
         sscanf(&hexInput[i * 2], "%2x", &byte);
