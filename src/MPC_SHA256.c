@@ -163,9 +163,15 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
     mpc_XOR(t0, g, z);
 }
 
-void mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
-                View views[3], int *countY, int *randCount)
+void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], View views[3], int *countY,
+                int *randCount)
 {
+
+    unsigned char *results[3];
+    results[0] = malloc(32);
+    results[1] = malloc(32);
+    results[2] = malloc(32);
+
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
@@ -286,49 +292,48 @@ void mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits
                               results[2][i * 4 + 3];
         *countY += 1;
     }
+
+    free(results[0]);
+    free(results[1]);
+    free(results[2]);
 }
 
 a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3][numBytes],
                  unsigned char *randomness[3], View views[3])
 {
+    // First grab the share of (digest||commitment_key)
     unsigned char *inputs[3];
     for (int i = 0; i < 3; i++)
     {
         inputs[i] = calloc(55, 1);
-        memcopy(inputs[i], shares[i], 55); // We grab the shares of (digest||commit_key)
+        memcpy(inputs[i], shares[i] + 32, 23);
     }
+    memcpy(inputs[0], digest, 32); // digest isn't secret so don´t need to be shared
 
-    unsigned char *hashes[3];
-    hashes[0] = malloc(32);
-    hashes[1] = malloc(32);
-    hashes[2] = malloc(32);
     int *countY = calloc(1, sizeof(int));
     int *randCount = calloc(1, sizeof(int));
 
     // Computing sha256(digest||commit-key)
-    mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY, randCount);
+    mpc_sha256(inputs, numBytes * 8, randomness, views, countY, randCount);
 
+    // Computing the 256 sha256s
     for (int i = 0; i < 3; i++)
     {
         free(inputs[i]);
-        inputs[i] = calloc(32, 1);
+        inputs[i] = malloc(32);
     }
 
-    // Computing the 256 sha256s
     for (int i = 0; i < 256; i++)
     {
-        mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY, randCount);
         for (int j = 0; j < 3; j++)
         {
-            memset(inputs[i], 0, 32);
+            memcpy(inputs[i], shares[i] + 55 + 32 * i, 32);
         }
+        mpc_sha256(inputs, SHA256_DIGEST_LENGTH * 8, randomness, views, countY, randCount);
     }
 
     free(randCount);
     free(countY);
-    free(hashes[0]);
-    free(hashes[1]);
-    free(hashes[2]);
 
     uint32_t *result1 = malloc(32);
     output(views[0], result1);
