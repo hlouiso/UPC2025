@@ -133,9 +133,9 @@ void H(unsigned char k[16], View v, unsigned char r[4], unsigned char hash[SHA25
     SHA256_CTX ctx;
     SHA256_Init(&ctx);
 
-    SHA256_Update(&ctx, k, 16);                         /* la clé */
-    SHA256_Update(&ctx, v.x, 64);                       /* les 64 o de x */
-    SHA256_Update(&ctx, v.y, ySize * sizeof(uint32_t)); /* le contenu de y */
+    SHA256_Update(&ctx, k, 16);
+    SHA256_Update(&ctx, v.x, 64);
+    SHA256_Update(&ctx, v.y, ySize * sizeof(uint32_t));
     SHA256_Update(&ctx, r, 4);
 
     SHA256_Final(hash, &ctx);

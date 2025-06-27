@@ -163,8 +163,8 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
     mpc_XOR(t0, g, z);
 }
 
-int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
-               View views[3], int *countY, int *randCount)
+void mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
+                View views[3], int *countY, int *randCount)
 {
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
@@ -275,38 +275,55 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         results[1][i * 4 + 3] = hHa[i][1];
         results[2][i * 4 + 3] = hHa[i][2];
     }
-    return 0;
+
+    for (int i = 0; i < 8; i++)
+    {
+        views[0].y[*countY] = (results[0][i * 4] << 24) | (results[0][i * 4 + 1] << 16) | (results[0][i * 4 + 2] << 8) |
+                              results[0][i * 4 + 3];
+        views[1].y[*countY] = (results[1][i * 4] << 24) | (results[1][i * 4 + 1] << 16) | (results[1][i * 4 + 2] << 8) |
+                              results[1][i * 4 + 3];
+        views[2].y[*countY] = (results[2][i * 4] << 24) | (results[2][i * 4 + 1] << 16) | (results[2][i * 4 + 2] << 8) |
+                              results[2][i * 4 + 3];
+        *countY += 1;
+    }
 }
 
 a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3][numBytes],
                  unsigned char *randomness[3], View views[3])
 {
     unsigned char *inputs[3];
-    inputs[0] = shares[0];
-    inputs[1] = shares[1];
-    inputs[2] = shares[2];
+    for (int i = 0; i < 3; i++)
+    {
+        inputs[i] = calloc(55, 1);
+        memcopy(inputs[i], shares[i], 55); // We grab the shares of (digest||commit_key)
+    }
+
     unsigned char *hashes[3];
     hashes[0] = malloc(32);
     hashes[1] = malloc(32);
     hashes[2] = malloc(32);
-
     int *countY = calloc(1, sizeof(int));
     int *randCount = calloc(1, sizeof(int));
+
+    // Computing sha256(digest||commit-key)
     mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY, randCount);
 
-    // Explicitly add y to view
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 3; i++)
     {
-        views[0].y[*countY] = (hashes[0][i * 4] << 24) | (hashes[0][i * 4 + 1] << 16) | (hashes[0][i * 4 + 2] << 8) |
-                              hashes[0][i * 4 + 3];
-        views[1].y[*countY] = (hashes[1][i * 4] << 24) | (hashes[1][i * 4 + 1] << 16) | (hashes[1][i * 4 + 2] << 8) |
-                              hashes[1][i * 4 + 3];
-        views[2].y[*countY] = (hashes[2][i * 4] << 24) | (hashes[2][i * 4 + 1] << 16) | (hashes[2][i * 4 + 2] << 8) |
-                              hashes[2][i * 4 + 3];
-        *countY += 1;
+        free(inputs[i]);
+        inputs[i] = calloc(32, 1);
     }
 
-    printf("%d\n\n", *countY);
+    // Computing the 256 sha256s
+    for (int i = 0; i < 256; i++)
+    {
+        mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY, randCount);
+        for (int j = 0; j < 3; j++)
+        {
+            memset(inputs[i], 0, 32);
+        }
+    }
+
     free(randCount);
     free(countY);
     free(hashes[0]);
@@ -422,16 +439,9 @@ int main(void)
     memcpy(input + 55, sigma, 8192);
 
     // Generating keys
-    unsigned char rs[NUM_ROUNDS][3][4];
     unsigned char keys[NUM_ROUNDS][3][16];
 
     if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
-    }
-
-    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
     {
         printf("RAND_bytes failed crypto, aborting\n");
         return 0;
@@ -490,7 +500,8 @@ int main(void)
         }
     }
 
-    // Running Circuit
+    /* ============================================== Running Circuit ============================================== */
+
     a as[NUM_ROUNDS];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
@@ -502,7 +513,16 @@ int main(void)
         }
     }
 
-    // Committing
+    /* ============================================================================================================= */
+
+    // Committing the views
+    unsigned char rs[NUM_ROUNDS][3][4]; // Commit keys
+    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
+    {
+        printf("RAND_bytes failed crypto, aborting\n");
+        return 0;
+    }
+
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -533,8 +553,7 @@ int main(void)
         zs[i] = prove(es[i], keys[i], rs[i], localViews[i]);
     }
 
-    /* ============================================== Writing to file ============================================== */
-
+    // Writing to file
     FILE *file = fopen("proof.bin", "wb");
 
     fwrite(as, sizeof(a), NUM_ROUNDS, file);
@@ -548,9 +567,6 @@ int main(void)
     }
 
     fclose(file);
-
-    /* ============================================================================================================= */
-
     free(zs);
     return EXIT_SUCCESS;
 }
