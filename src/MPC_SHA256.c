@@ -166,13 +166,6 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
 int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
                View views[3], int *countY, int *randCount)
 {
-
-    if (numBits > 447)
-    {
-        printf("Input too long, aborting!");
-        return -1;
-    }
-
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
@@ -184,7 +177,6 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         chunks[i][chars] = 0x80;
         chunks[i][62] = numBits >> 8;
         chunks[i][63] = numBits;
-        memcpy(views[i].x, chunks[i], 64);
 
         for (int j = 0; j < 16; j++)
         {
@@ -286,8 +278,8 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
     return 0;
 }
 
-a building_views(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], unsigned char rs[3][4],
-                 View views[3])
+a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3][numBytes],
+                 unsigned char *randomness[3], View views[3])
 {
     unsigned char *inputs[3];
     inputs[0] = shares[0];
@@ -368,30 +360,22 @@ int main(void)
     }
 
     // Getting m
-    char *userInput = NULL;
+    char *message = NULL;
     size_t bufferSize = 0;
     printf("\nPlease enter your message:\n");
-    getline(&userInput, &bufferSize, stdin);
-    userInput[strlen(userInput) - 1] = '\0'; // to remove '\n' at the end
+    getline(&message, &bufferSize, stdin);
+    message[strlen(message) - 1] = '\0'; // to remove '\n' at the end
 
-    // Computing h(m)
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256((unsigned char *)userInput, strlen(userInput), hash);
-    free(userInput);
-
-    // printing digest
-    printf("\nMessage digest is:\n");
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        printf("%02X", hash[i]);
-    }
-    printf("\n");
+    // Computing message digest
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256((unsigned char *)message, strlen(message), digest);
+    free(message);
 
     // Getting commitment key
     char hexInput[2 * COMMIT_KEY_LEN + 1];
     unsigned char commitment_key[COMMIT_KEY_LEN];
 
-    printf("\nEnter your commitment (46 hex chars):\n");
+    printf("\nEnter your commitment key (46 hex chars):\n");
     fgets(hexInput, sizeof(hexInput), stdin);
 
     for (int i = 0; i < COMMIT_KEY_LEN; i++)
@@ -401,51 +385,22 @@ int main(void)
         commitment_key[i] = (unsigned char)byte;
     }
 
-    unsigned char input[INPUT_LEN];
-    memcpy(input, hash, 32);
-    memcpy(input + 32, commitment_key, 23);
+    // Getting commitment
+    char hexInput2[2 * COMMIT_LEN + 1];
+    unsigned char commitment[COMMIT_LEN];
 
-    // Showing the commitment
-    unsigned char finalHashed[SHA256_DIGEST_LENGTH];
-    SHA256(input, INPUT_LEN, finalHashed);
-    printf("\nYour final hash is h(h(m)||r):\n");
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-        printf("%02X", finalHashed[i]);
-    printf("\n\n");
+    printf("\nEnter your commitment (64 hex chars):\n");
+    fgets(hexInput2, sizeof(hexInput2), stdin);
 
-    // Generating keys
-    unsigned char rs[NUM_ROUNDS][3][4];
-    unsigned char keys[NUM_ROUNDS][3][16];
-
-    if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
+    for (int i = 0; i < COMMIT_LEN; i++)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        unsigned int byte;
+        sscanf(&hexInput2[i * 2], "%2x", &byte);
+        commitment[i] = (unsigned char)byte;
     }
-    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
-    }
-
-    // Getting public_key
-    FILE *fp = fopen("public_key.txt", "r");
-    char public_key[8192];
-    for (int i = 0; i < 256; ++i)
-        for (int j = 0; j < 32; ++j)
-        {
-            int c1 = fgetc(fp);
-            int c2 = fgetc(fp);
-
-            c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
-            c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
-
-            public_key[i * 32 + j] = (char)((c1 << 4) | c2);
-        }
-    fclose(fp);
 
     // Getting WOTS signature
-    fp = fopen("signature.txt", "r");
+    FILE *fp = fopen("signature.txt", "r");
     char sigma[8192];
     for (int i = 0; i < 256; ++i)
         for (int j = 0; j < 32; ++j)
@@ -460,6 +415,44 @@ int main(void)
         }
     fclose(fp);
 
+    // Building input
+    unsigned char input[INPUT_LEN];
+    memcpy(input, commitment_key, 23);
+    memcpy(input + 23, commitment, 32);
+    memcpy(input + 55, sigma, 8192);
+
+    // Generating keys
+    unsigned char rs[NUM_ROUNDS][3][4];
+    unsigned char keys[NUM_ROUNDS][3][16];
+
+    if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
+    {
+        printf("RAND_bytes failed crypto, aborting\n");
+        return 0;
+    }
+
+    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
+    {
+        printf("RAND_bytes failed crypto, aborting\n");
+        return 0;
+    }
+
+    // Getting public_key
+    fp = fopen("public_key.txt", "r");
+    char public_key[8192];
+    for (int i = 0; i < 256; ++i)
+        for (int j = 0; j < 32; ++j)
+        {
+            int c1 = fgetc(fp);
+            int c2 = fgetc(fp);
+
+            c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
+            c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
+
+            public_key[i * 32 + j] = (char)((c1 << 4) | c2);
+        }
+    fclose(fp);
+
     // Sharing secrets
     unsigned char shares[NUM_ROUNDS][3][INPUT_LEN];
     if (RAND_bytes(shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
@@ -467,6 +460,9 @@ int main(void)
         printf("RAND_bytes failed crypto, aborting\n");
         return 0;
     }
+
+    View localViews[NUM_ROUNDS][3];
+
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -474,12 +470,15 @@ int main(void)
         {
             shares[k][2][j] = input[j] ^ shares[k][0][j] ^ shares[k][1][j];
         }
+        for (int j = 0; j < 3; j++)
+        {
+            memcpy(localViews[k][j].x, shares[k][j], INPUT_LEN);
+        }
     }
 
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
     int Bytes_Needed = 2912;
-    View localViews[NUM_ROUNDS][3];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -491,12 +490,12 @@ int main(void)
         }
     }
 
-    // Running MPC-SHA2
+    // Running Circuit
     a as[NUM_ROUNDS];
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = building_views(INPUT_LEN, shares[k], randomness[k], rs[k], localViews[k]);
+        as[k] = building_views(digest, INPUT_LEN, shares[k], randomness[k], localViews[k]);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);

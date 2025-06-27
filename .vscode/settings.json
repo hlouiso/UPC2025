@@ -3,6 +3,7 @@
         "string.h": "c",
         "stdlib.h": "c",
         "evp.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "rand.h": "c"
     }
 }

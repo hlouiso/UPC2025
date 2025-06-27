@@ -7,3 +7,6 @@ Suppriession de plusieurs fonctions du prover.c car jamais appelées
 Je viens de remarquer que la sortie de SHA256 fait 256 bits
 Pourtant les portes MPC ont été designées pour des entrées de 32 bits
 C'est parce que SHA256 découpe son entrée en 8 et agit sur chaque bloc de 32 bits
+
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
