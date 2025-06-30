@@ -17,8 +17,9 @@
 int COMMIT_KEY_LEN = 23;
 int COMMIT_LEN = 32;
 int NUM_ROUNDS = 136;
-int INPUT_LEN = 8247;
+
 /* 8247 bytes = COMMIT_KEY_LEN (23 bytes) + Digest len (32 bytes) + Sigma size (wots signature: 256 * 32 bytes) */
+int INPUT_LEN = 8247;
 
 static const uint32_t hA[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
                                0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
@@ -43,7 +44,7 @@ typedef struct
 
 typedef struct
 {
-    uint32_t yp[3][8];
+    uint32_t yp[3][8 * 257];
     unsigned char h[3][32];
 } a;
 

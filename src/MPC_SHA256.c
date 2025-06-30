@@ -163,15 +163,9 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
     mpc_XOR(t0, g, z);
 }
 
-void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], View views[3], int *countY,
-                int *randCount)
+void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], char *results[3], View views[3],
+                int *countY, int *randCount)
 {
-
-    unsigned char *results[3];
-    results[0] = malloc(32);
-    results[1] = malloc(32);
-    results[2] = malloc(32);
-
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
@@ -292,14 +286,10 @@ void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness
                               results[2][i * 4 + 3];
         *countY += 1;
     }
-
-    free(results[0]);
-    free(results[1]);
-    free(results[2]);
 }
 
 a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3][numBytes],
-                 unsigned char *randomness[3], View views[3])
+                 unsigned char *randomness[3], View views[3], unsigned char public_key[8192])
 {
     // First grab the share of (digest||commitment_key)
     unsigned char *inputs[3];
@@ -312,29 +302,128 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
 
     int *countY = calloc(1, sizeof(int));
     int *randCount = calloc(1, sizeof(int));
+    unsigned char *results[3];
+    results[0] = malloc(32);
+    results[1] = malloc(32);
+    results[2] = malloc(32);
 
     // Computing sha256(digest||commit-key)
-    mpc_sha256(inputs, numBytes * 8, randomness, views, countY, randCount);
+    mpc_sha256(inputs, numBytes * 8, randomness, results, views, countY, randCount);
 
-    // Computing the 256 sha256s
-    for (int i = 0; i < 3; i++)
+    // xoring with secret commitment
+    uint32_t t0[3], t1[3], tmp[3];
+
+    for (int i = 0; i < 8; i++)
     {
-        free(inputs[i]);
-        inputs[i] = malloc(32);
+        for (int j = 0; j < 3; j++)
+        {
+            memcpy(&t0[j], shares[j] + 23 + 4 * i, 4);
+            memcpy(&t1[j], results[j] + 4 * i, 4);
+        }
+        mpc_XOR(t0, t1, tmp);
+
+        for (int j = 0; j < 3; j++)
+        {
+            views[j].y[*countY] = tmp[j];
+        }
+        (*countY)++;
+    }
+
+    // Verifying signature
+    for (int j = 0; j < 3; j++)
+    {
+        free(inputs[j]);
+        inputs[j] = malloc(32);
     }
 
     for (int i = 0; i < 256; i++)
     {
+        int index_in_input = 55 + 32 * i;
+
+        // Computing SHA256 of WOTS_signature[i]
         for (int j = 0; j < 3; j++)
         {
-            memcpy(inputs[i], shares[i] + 55 + 32 * i, 32);
+            memcpy(inputs[j], shares[j] + index_in_input, 32);
         }
-        mpc_sha256(inputs, SHA256_DIGEST_LENGTH * 8, randomness, views, countY, randCount);
+        mpc_sha256(inputs, SHA256_DIGEST_LENGTH * 8, randomness, results, views, countY, randCount);
+
+        // Xoring the result with WOTS_signature[i]
+        uint32_t verif_result[3][8];
+        for (int j = 0; j < 8; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                memcpy(&t0[k], shares[k] + index_in_input + 4 * j, 4);
+                memcpy(&t1[k], results[k] + 4 * j, 4);
+            }
+
+            mpc_XOR(t0, t1, tmp);
+
+            for (int k = 0; k < 3; k++)
+            {
+                views[k].y[*countY] = tmp[k];
+                verif_result[k][j] = tmp[k];
+            }
+            (*countY)++;
+        }
+
+        // Building MASK: getting a share of i-th bit of the shared commitment and extending it in 32bits word
+        uint32_t mask[3];
+        int byte = i >> 3;
+        int bit = i & 7;
+
+        for (int j = 0; j < 3; j++)
+        {
+            uint8_t v = shares[j][23 + byte];
+            uint32_t b = (v >> bit) & 1;
+            mask[j] = 0u - b;
+        }
+
+        for (int j = 0; j < 8; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                memcpy(&t0[k], &verif_result[k][j], 4);
+            }
+
+            mpc_AND(t0, mask, tmp, randomness, randCount, views, countY);
+
+            for (int k = 0; k < 3; k++)
+            {
+                views[k].y[*countY] = tmp[k];
+                verif_result[k][j] = tmp[k];
+            }
+            (*countY)++;
+        }
+
+        // Xoring sha256 of WOTS_signature[i]
+        for (int j = 0; j < 8; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                memcpy(&t0[k], &verif_result[k][j], 4);
+                memcpy(&t1[k], results[k] + 4 * j, 4);
+            }
+
+            mpc_XOR(t0, t1, tmp);
+
+            for (int k = 0; k < 3; k++)
+            {
+                views[k].y[*countY] = tmp[k];
+            }
+            (*countY)++;
+        }
     }
 
+    for (int i = 0; i < 3; i++)
+    {
+        free(inputs[i]);
+        free(results[i]);
+    }
     free(randCount);
     free(countY);
 
+    // building a
     uint32_t *result1 = malloc(32);
     output(views[0], result1);
     uint32_t *result2 = malloc(32);
@@ -454,7 +543,7 @@ int main(void)
 
     // Getting public_key
     fp = fopen("public_key.txt", "r");
-    char public_key[8192];
+    unsigned char public_key[8192];
     for (int i = 0; i < 256; ++i)
         for (int j = 0; j < 32; ++j)
         {
@@ -511,7 +600,7 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = building_views(digest, INPUT_LEN, shares[k], randomness[k], localViews[k]);
+        as[k] = building_views(digest, INPUT_LEN, shares[k], randomness[k], localViews[k], public_key);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);
