@@ -38,6 +38,7 @@ const mpc_sha256_size = 736;
 const int mpc_sha256_runs = 257;
 int ySize = mpc_sha256_runs * mpc_sha256_size + 8 + 16 * 256;
 const int output_nb_in_uint32 = 257 * 8; // knowing that one output = 256 bits = 8 uint32_t
+int Random_Bytes_Needed = 2912 * mpc_sha256_runs + 256 * 8 * 4;
 
 typedef struct
 {
@@ -112,7 +113,7 @@ void getAllRandomness(unsigned char key[16], unsigned char *randomness, int Byte
     EVP_CIPHER_CTX_cleanup(&ctx);
 }
 
-uint32_t getRandom32(unsigned char randomness[2912], int randCount)
+uint32_t getRandom32(unsigned char randomness[Random_Bytes_Needed], int randCount)
 {
     uint32_t ret;
     memcpy(&ret, &randomness[randCount], 4);

@@ -49,7 +49,6 @@ void mpc_ADD(uint32_t x[3], uint32_t y[3], uint32_t z[3], unsigned char *randomn
     uint32_t r[3] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount),
                      getRandom32(randomness[2], *randCount)};
     *randCount += 4;
-
     uint8_t a[3], b[3];
 
     uint8_t t;
@@ -166,6 +165,7 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
 void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], char *results[3], View views[3],
                 int *countY, int *randCount)
 {
+
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
@@ -313,9 +313,8 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
     results[2] = malloc(32);
 
     // Computing sha256(digest||commit-key)
-    printf("HELLO\n");
     mpc_sha256(inputs, numBytes * 8, randomness, results, views, countY, randCount);
-    printf("HELLO\n");
+
     // xoring with secret commitment
     uint32_t t0[3], t1[3], tmp[3];
 
@@ -337,6 +336,9 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         (*countY)++;
     }
 
+    printf("%08x ", a.yp[0][0] ^ a.yp[1][0] ^ a.yp[2][0]);
+    printf("\n");
+
     // Verifying signature
     for (int j = 0; j < 3; j++)
     {
@@ -353,6 +355,7 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         {
             memcpy(inputs[j], shares[j] + index_in_input, 32);
         }
+
         mpc_sha256(inputs, SHA256_DIGEST_LENGTH * 8, randomness, results, views, countY, randCount);
 
         // Xoring the result with WOTS_signature[i]
@@ -426,6 +429,7 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         free(inputs[i]);
         free(results[i]);
     }
+
     free(randCount);
     free(countY);
 
@@ -571,14 +575,13 @@ int main(void)
 
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
-    int Bytes_Needed = 2912 * 258;
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
         for (int j = 0; j < 3; j++)
         {
-            randomness[k][j] = malloc(Bytes_Needed * sizeof(unsigned char));
-            getAllRandomness(keys[k][j], randomness[k][j], Bytes_Needed);
+            randomness[k][j] = malloc(Random_Bytes_Needed * sizeof(unsigned char));
+            getAllRandomness(keys[k][j], randomness[k][j], Random_Bytes_Needed);
             localViews[k][j].y = malloc(ySize * sizeof(uint32_t));
         }
     }
@@ -589,7 +592,8 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = building_views(digest, INPUT_LEN, shares[k], randomness[k], localViews[k], public_key);
+        as[k] =
+            building_views(digest, COMMIT_KEY_LEN + COMMIT_LEN, shares[k], randomness[k], localViews[k], public_key);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);
