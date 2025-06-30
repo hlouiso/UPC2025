@@ -291,6 +291,10 @@ void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness
 a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3][numBytes],
                  unsigned char *randomness[3], View views[3], unsigned char public_key[8192])
 {
+    // Declaring the output a
+    a a;
+    int index_in_a = 0;
+
     // First grab the share of (digest||commitment_key)
     unsigned char *inputs[3];
     for (int i = 0; i < 3; i++)
@@ -298,6 +302,7 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         inputs[i] = calloc(55, 1);
         memcpy(inputs[i], shares[i] + 32, 23);
     }
+
     memcpy(inputs[0], digest, 32); // digest isn't secret so don´t need to be shared
 
     int *countY = calloc(1, sizeof(int));
@@ -308,8 +313,9 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
     results[2] = malloc(32);
 
     // Computing sha256(digest||commit-key)
+    printf("HELLO\n");
     mpc_sha256(inputs, numBytes * 8, randomness, results, views, countY, randCount);
-
+    printf("HELLO\n");
     // xoring with secret commitment
     uint32_t t0[3], t1[3], tmp[3];
 
@@ -325,7 +331,9 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         for (int j = 0; j < 3; j++)
         {
             views[j].y[*countY] = tmp[j];
+            memcpy(&a.yp[j][index_in_a], &tmp[j], 4);
         }
+        index_in_a++;
         (*countY)++;
     }
 
@@ -361,10 +369,8 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
 
             for (int k = 0; k < 3; k++)
             {
-                views[k].y[*countY] = tmp[k];
                 verif_result[k][j] = tmp[k];
             }
-            (*countY)++;
         }
 
         // Building MASK: getting a share of i-th bit of the shared commitment and extending it in 32bits word
@@ -390,10 +396,8 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
 
             for (int k = 0; k < 3; k++)
             {
-                views[k].y[*countY] = tmp[k];
                 verif_result[k][j] = tmp[k];
             }
-            (*countY)++;
         }
 
         // Xoring sha256 of WOTS_signature[i]
@@ -410,7 +414,9 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
             for (int k = 0; k < 3; k++)
             {
                 views[k].y[*countY] = tmp[k];
+                memcpy(&a.yp[k][index_in_a], &tmp[k], 4);
             }
+            index_in_a++;
             (*countY)++;
         }
     }
@@ -422,23 +428,6 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
     }
     free(randCount);
     free(countY);
-
-    // building a
-    uint32_t *result1 = malloc(32);
-    output(views[0], result1);
-    uint32_t *result2 = malloc(32);
-    output(views[1], result2);
-    uint32_t *result3 = malloc(32);
-    output(views[2], result3);
-
-    a a;
-    memcpy(a.yp[0], result1, 32);
-    memcpy(a.yp[1], result2, 32);
-    memcpy(a.yp[2], result3, 32);
-
-    free(result1);
-    free(result2);
-    free(result3);
 
     return a;
 }
@@ -483,7 +472,7 @@ int main(void)
     free(message);
 
     // Getting commitment key
-    char hexInput[2 * COMMIT_KEY_LEN + 1];
+    char hexInput[2 * COMMIT_KEY_LEN + 2];
     unsigned char commitment_key[COMMIT_KEY_LEN];
 
     printf("\nEnter your commitment key (46 hex chars):\n");
@@ -497,7 +486,7 @@ int main(void)
     }
 
     // Getting commitment
-    char hexInput2[2 * COMMIT_LEN + 1];
+    char hexInput2[2 * COMMIT_LEN + 2];
     unsigned char commitment[COMMIT_LEN];
 
     printf("\nEnter your commitment (64 hex chars):\n");
@@ -582,7 +571,7 @@ int main(void)
 
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
-    int Bytes_Needed = 2912;
+    int Bytes_Needed = 2912 * 258;
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -631,12 +620,7 @@ int main(void)
 
     // Generating E
     int es[NUM_ROUNDS];
-    uint32_t finalHash[8];
-    for (int j = 0; j < 8; j++)
-    {
-        finalHash[j] = as[0].yp[0][j] ^ as[0].yp[1][j] ^ as[0].yp[2][j];
-    }
-    H3(finalHash, as, NUM_ROUNDS, es);
+    H3(digest, as, NUM_ROUNDS, es);
 
     // Packing Z
     z *zs = malloc(sizeof(z) * NUM_ROUNDS);

@@ -16,7 +16,7 @@
 
 int COMMIT_KEY_LEN = 23;
 int COMMIT_LEN = 32;
-int NUM_ROUNDS = 136;
+int NUM_ROUNDS = 1; // Usually 136
 
 /* 8247 bytes = COMMIT_KEY_LEN (23 bytes) + Digest len (32 bytes) + Sigma size (wots signature: 256 * 32 bytes) */
 int INPUT_LEN = 8247;
@@ -34,7 +34,10 @@ static const uint32_t k[64] = {
     0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
-int ySize = 736;
+const mpc_sha256_size = 736;
+const int mpc_sha256_runs = 257;
+int ySize = mpc_sha256_runs * mpc_sha256_size + 8 + 16 * 256;
+const int output_nb_in_uint32 = 257 * 8; // knowing that one output = 256 bits = 8 uint32_t
 
 typedef struct
 {
@@ -44,7 +47,7 @@ typedef struct
 
 typedef struct
 {
-    uint32_t yp[3][8 * 257];
+    uint32_t yp[3][257 * 8];
     unsigned char h[3][32];
 } a;
 
