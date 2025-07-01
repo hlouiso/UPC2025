@@ -294,15 +294,15 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
     // Declaring the output a
     a a;
     int index_in_a = 0;
+    int index_in_pub_key = 0;
 
     // First grab the share of (digest||commitment_key)
     unsigned char *inputs[3];
     for (int i = 0; i < 3; i++)
     {
         inputs[i] = calloc(55, 1);
-        memcpy(inputs[i], shares[i] + 32, 23);
+        memcpy(inputs[i] + 32, shares[i], 23);
     }
-
     memcpy(inputs[0], digest, 32); // digest isn't secret so don´t need to be shared
 
     int *countY = calloc(1, sizeof(int));
@@ -314,14 +314,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
     // Computing sha256(digest||commit-key)
     mpc_sha256(inputs, 55 * 8, randomness, results, views, countY, randCount);
-    // Affichage du résultat du XOR des trois parts
-    printf("Résultat du XOR des trois results (SHA256 digest):\n");
-    for (int i = 0; i < 32; i++)
-    { // SHA256 produit 32 octets
-        unsigned char xor_result = results[0][i] ^ results[1][i] ^ results[2][i];
-        printf("%02x", xor_result); // Affiche chaque octet en hexadécimal
-    }
-    printf("\n");
 
     // xoring with secret commitment
     uint32_t t0[3], t1[3], tmp[3];
@@ -332,17 +324,11 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         {
             memcpy(&t0[j], shares[j] + 23 + 4 * i, 4);
             memcpy(&t1[j], results[j] + 4 * i, 4);
-            if (i == 0)
-            {
-                printf("\n");
-                printf("%08x ", t0[j]);
-                printf("%08x ", t1[j]);
-                printf("\n");
-            }
         }
 
         mpc_XOR(t0, t1, tmp);
 
+        printf("\n");
         for (int j = 0; j < 3; j++)
         {
             views[j].y[*countY] = tmp[j];
@@ -362,6 +348,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
     for (int i = 0; i < 256; i++)
     {
         int index_in_input = 55 + 32 * i;
+        index_in_pub_key = 32 * i;
 
         // Computing SHA256 of WOTS_signature[i]
         for (int j = 0; j < 3; j++)
@@ -373,6 +360,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
         // Xoring the result with WOTS_signature[i]
         uint32_t verif_result[3][8];
+
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -399,7 +387,9 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             uint8_t v = shares[j][23 + byte];
             uint32_t b = (v >> bit) & 1;
             mask[j] = 0u - b;
+            views[j].y[*countY] = mask[j];
         }
+        *(countY) += 1;
 
         for (int j = 0; j < 8; j++)
         {
@@ -416,7 +406,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             }
         }
 
-        // Xoring sha256 of WOTS_signature[i]
+        // Xoring with sha256 of WOTS_signature[i]
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -430,10 +420,28 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             for (int k = 0; k < 3; k++)
             {
                 views[k].y[*countY] = tmp[k];
-                memcpy(&a.yp[k][index_in_a], &tmp[k], 4);
+                verif_result[k][j] = tmp[k];
             }
             index_in_a++;
             (*countY)++;
+        }
+
+        // Xoring with public_key[i]
+        for (int j = 0; j < 8; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                memcpy(&t0[k], &verif_result[k][j], 4);
+                memcpy(&t1[k], public_key + index_in_pub_key + 4 * j, 4);
+            }
+
+            mpc_XOR(t0, t1, tmp);
+
+            for (int k = 0; k < 3; k++)
+            {
+                memcpy(&a.yp[k][index_in_a], &tmp[k], 4);
+                printf("\n %08x \n", a.yp[0][index_in_a] ^ a.yp[1][index_in_a] ^ a.yp[2][index_in_a]);
+            }
         }
     }
 
@@ -445,10 +453,17 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
     // for (int i = 0; i < 257 * 8; i++)
     // {
+    //     if (a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i] != 0)
+    //     {
+    //         printf("\n i = %d\n", i);
+    //     }
     //     printf("%08x ", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
+    //     if (i % 8 == 0)
+    //     {
+    //         printf("\n\n");
+    //     }
     // }
     // printf("\n");
-
     free(randCount);
     free(countY);
 
@@ -523,13 +538,24 @@ int main(void)
     }
 
     // Getting WOTS signature
+    int c1;
+    int c2;
     FILE *fp = fopen("signature.txt", "r");
-    char sigma[8192];
-    for (int i = 0; i < 256; ++i)
-        for (int j = 0; j < 32; ++j)
+    unsigned char sigma[8192];
+    for (int i = 0; i < 256; i++)
+        for (int j = 0; j < 32; j++)
         {
-            int c1 = fgetc(fp);
-            int c2 = fgetc(fp);
+            c1 = fgetc(fp);
+            while (c1 == '\n')
+            {
+                c1 = fgetc(fp);
+            }
+
+            c2 = fgetc(fp);
+            while (c2 == '\n')
+            {
+                c2 = fgetc(fp);
+            }
 
             c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
             c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
@@ -559,8 +585,17 @@ int main(void)
     for (int i = 0; i < 256; ++i)
         for (int j = 0; j < 32; ++j)
         {
-            int c1 = fgetc(fp);
-            int c2 = fgetc(fp);
+            c1 = fgetc(fp);
+            while (c1 == '\n')
+            {
+                c1 = fgetc(fp);
+            }
+
+            c2 = fgetc(fp);
+            while (c2 == '\n')
+            {
+                c2 = fgetc(fp);
+            }
 
             c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
             c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
@@ -618,7 +653,8 @@ int main(void)
         }
     }
 
-    /* ============================================================================================================= */
+    /* =============================================================================================================
+     */
 
     // Committing the views
     unsigned char rs[NUM_ROUNDS][3][4]; // Commit keys

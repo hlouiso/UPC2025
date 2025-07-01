@@ -19,4 +19,4 @@ all: ../prover ../verifier ../sign
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o src/*.o ../prover ../verifier ../sign ../signature.txt ../public_key.txt ../out* ../proof.bin
+	rm -f *.o src/*.o ../prover ../verifier ../sign ../out* ../proof.bin
