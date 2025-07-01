@@ -336,9 +336,6 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         (*countY)++;
     }
 
-    printf("%08x ", a.yp[0][0] ^ a.yp[1][0] ^ a.yp[2][0]);
-    printf("\n");
-
     // Verifying signature
     for (int j = 0; j < 3; j++)
     {
@@ -429,6 +426,12 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         free(inputs[i]);
         free(results[i]);
     }
+
+    for (int i = 0; i < 257 * 8; i++)
+    {
+        printf("%08x ", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
+    }
+    printf("\n");
 
     free(randCount);
     free(countY);

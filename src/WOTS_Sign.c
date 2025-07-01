@@ -28,7 +28,7 @@ int main(void)
     char hex_input[65] = {0};
     int bits[NUM_BITS] = {0};
 
-    printf("Entrez 256 bits en hexadécimal MAJUSCULE (64 caractères) : ");
+    printf("Entrez le commitment en hexadécimal MAJUSCULE (64 caractères) : ");
     if (scanf("%64s", hex_input) != 1)
     {
         fprintf(stderr, "Erreur : lecture impossible.\n");
