@@ -288,8 +288,8 @@ void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness
     }
 }
 
-a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3][numBytes],
-                 unsigned char *randomness[3], View views[3], unsigned char public_key[8192])
+a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], unsigned char *randomness[3],
+                 View views[3], unsigned char public_key[8192])
 {
     // Declaring the output a
     a a;
@@ -313,7 +313,15 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
     results[2] = malloc(32);
 
     // Computing sha256(digest||commit-key)
-    mpc_sha256(inputs, numBytes * 8, randomness, results, views, countY, randCount);
+    mpc_sha256(inputs, 55 * 8, randomness, results, views, countY, randCount);
+    // Affichage du résultat du XOR des trois parts
+    printf("Résultat du XOR des trois results (SHA256 digest):\n");
+    for (int i = 0; i < 32; i++)
+    { // SHA256 produit 32 octets
+        unsigned char xor_result = results[0][i] ^ results[1][i] ^ results[2][i];
+        printf("%02x", xor_result); // Affiche chaque octet en hexadécimal
+    }
+    printf("\n");
 
     // xoring with secret commitment
     uint32_t t0[3], t1[3], tmp[3];
@@ -324,7 +332,15 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         {
             memcpy(&t0[j], shares[j] + 23 + 4 * i, 4);
             memcpy(&t1[j], results[j] + 4 * i, 4);
+            if (i == 0)
+            {
+                printf("\n");
+                printf("%08x ", t0[j]);
+                printf("%08x ", t1[j]);
+                printf("\n");
+            }
         }
+
         mpc_XOR(t0, t1, tmp);
 
         for (int j = 0; j < 3; j++)
@@ -427,11 +443,11 @@ a building_views(unsigned char digest[32], int numBytes, unsigned char shares[3]
         free(results[i]);
     }
 
-    for (int i = 0; i < 257 * 8; i++)
-    {
-        printf("%08x ", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
-    }
-    printf("\n");
+    // for (int i = 0; i < 257 * 8; i++)
+    // {
+    //     printf("%08x ", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
+    // }
+    // printf("\n");
 
     free(randCount);
     free(countY);
@@ -595,8 +611,7 @@ int main(void)
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] =
-            building_views(digest, COMMIT_KEY_LEN + COMMIT_LEN, shares[k], randomness[k], localViews[k], public_key);
+        as[k] = building_views(digest, shares[k], randomness[k], localViews[k], public_key);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);
