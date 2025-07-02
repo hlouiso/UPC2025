@@ -328,7 +328,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
         mpc_XOR(t0, t1, tmp);
 
-        printf("\n");
         for (int j = 0; j < 3; j++)
         {
             views[j].y[*countY] = tmp[j];
@@ -422,11 +421,11 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
                 views[k].y[*countY] = tmp[k];
                 verif_result[k][j] = tmp[k];
             }
-            index_in_a++;
             (*countY)++;
         }
 
         // Xoring with public_key[i]
+        printf("\n\n%d\n", i);
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -440,8 +439,9 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             for (int k = 0; k < 3; k++)
             {
                 memcpy(&a.yp[k][index_in_a], &tmp[k], 4);
-                printf("\n %08x \n", a.yp[0][index_in_a] ^ a.yp[1][index_in_a] ^ a.yp[2][index_in_a]);
             }
+            printf("%08x", a.yp[0][index_in_a] ^ a.yp[1][index_in_a] ^ a.yp[2][index_in_a]);
+            index_in_a++;
         }
     }
 
@@ -453,17 +453,13 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
     // for (int i = 0; i < 257 * 8; i++)
     // {
-    //     if (a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i] != 0)
+    //     printf("%08x", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
+    //     if (i % 8 == 7)
     //     {
-    //         printf("\n i = %d\n", i);
-    //     }
-    //     printf("%08x ", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
-    //     if (i % 8 == 0)
-    //     {
-    //         printf("\n\n");
+    //         printf("\n");
     //     }
     // }
-    // printf("\n");
+
     free(randCount);
     free(countY);
 
