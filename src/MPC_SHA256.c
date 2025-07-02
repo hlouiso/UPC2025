@@ -360,6 +360,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         // Xoring the result with WOTS_signature[i]
         uint32_t verif_result[3][8];
 
+        printf("\n %d: ", i);
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -368,12 +369,23 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
                 memcpy(&t1[k], results[k] + 4 * j, 4);
             }
 
+            // if (i == 255 && j == 0)
+            // {
+            //     uint32_t xor_t0 = t0[0] ^ t0[1] ^ t0[2];
+            //     uint32_t xor_t1 = t1[0] ^ t1[1] ^ t1[2];
+            //     printf("XOR des trois t0: %08x\n", xor_t0);
+            //     printf("XOR des trois t1: %08x\n", xor_t1);
+            // }
+
             mpc_XOR(t0, t1, tmp);
 
             for (int k = 0; k < 3; k++)
             {
                 verif_result[k][j] = tmp[k];
             }
+
+            // uint32_t xor_tmp = tmp[0] ^ tmp[1] ^ tmp[2];
+            // printf("%08x", xor_tmp);
         }
 
         // Building MASK: getting a share of i-th bit of the shared commitment and extending it in 32bits word
@@ -425,22 +437,28 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         }
 
         // Xoring with public_key[i]
-        printf("\n\n%d\n", i);
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
             {
                 memcpy(&t0[k], &verif_result[k][j], 4);
-                memcpy(&t1[k], public_key + index_in_pub_key + 4 * j, 4);
             }
+            memset(t1, 0, sizeof(t1));
+            memcpy(&t1[0], public_key + index_in_pub_key + 4 * j, 4);
 
             mpc_XOR(t0, t1, tmp);
 
             for (int k = 0; k < 3; k++)
             {
+                views[k].y[*countY] = tmp[k];
+            }
+            (*countY)++;
+
+            for (int k = 0; k < 3; k++)
+            {
                 memcpy(&a.yp[k][index_in_a], &tmp[k], 4);
             }
-            printf("%08x", a.yp[0][index_in_a] ^ a.yp[1][index_in_a] ^ a.yp[2][index_in_a]);
+            // printf("%08x", a.yp[0][index_in_a] ^ a.yp[1][index_in_a] ^ a.yp[2][index_in_a]);
             index_in_a++;
         }
     }
