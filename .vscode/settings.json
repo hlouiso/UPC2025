@@ -4,6 +4,8 @@
         "stdlib.h": "c",
         "evp.h": "c",
         "stdbool.h": "c",
-        "rand.h": "c"
+        "rand.h": "c",
+        "building_views.h": "c",
+        "omp.h": "c"
     }
 }
