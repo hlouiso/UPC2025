@@ -21,8 +21,11 @@ MPC_prove_functions.o: MPC_prove_functions.c MPC_prove_functions.h shared.h
 building_views.o: building_views.c building_views.h MPC_prove_functions.h shared.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-../verifier: MPC_SHA256_VERIFIER.o
+../verifier: MPC_SHA256_VERIFIER.o shared.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+MPC_SHA256_VERIFIER.o: MPC_SHA256_VERIFIER.c shared.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 ../sign: WOTS_Sign.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

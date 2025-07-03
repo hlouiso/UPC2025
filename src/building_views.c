@@ -99,6 +99,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         // Building MASK: getting a share of i-th bit of the shared commitment and extending it in 32bits word
         uint32_t mask[3];
         int byte = i >> 3;
+        int bit = i & 7;
 
         for (int j = 0; j < 3; j++)
         {
@@ -108,6 +109,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             mask[j] = 0u - b;
             views[j].y[*countY] = mask[j];
         }
+
         *(countY) += 1;
 
         for (int j = 0; j < 8; j++)
@@ -143,7 +145,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             }
             (*countY)++;
         }
-
+        printf("\n\ni=%d\n", i);
         // Xoring with public_key[i]
         for (int j = 0; j < 8; j++)
         {
@@ -161,7 +163,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
                 views[k].y[*countY] = tmp[k];
             }
             (*countY)++;
-
+            printf("%08x", tmp[0] ^ tmp[1] ^ tmp[2]);
             for (int k = 0; k < 3; k++)
             {
                 memcpy(&a.yp[k][index_in_a], &tmp[k], 4);
@@ -176,11 +178,11 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         free(results[i]);
     }
 
-    for (int i = 0; i < 257 * 8; i++)
-    {
-        printf("%08x", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
-    }
-    printf("\n");
+    // for (int i = 0; i < 257 * 8; i++)
+    // {
+    //     printf("%08x", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
+    // }
+    // printf("\n");
     free(randCount);
     free(countY);
 
