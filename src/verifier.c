@@ -1,3 +1,4 @@
+#include "MPC_verify_functions.h"
 #include "shared.h"
 
 #include <stdbool.h>

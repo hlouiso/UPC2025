@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openssl/rand.h>
+
 #define CH(e, f, g) ((e & f) ^ ((~e) & g)) // Chooses f if e = 0 and g if e = 1
 
 z prove(int e, unsigned char keys[3][16], unsigned char rs[3][4], View views[3])
@@ -183,7 +185,8 @@ int main(void)
 
     /* ============================================== Running Circuit ============================================== */
 
-    a as[NUM_ROUNDS];
+    a *as = calloc(NUM_ROUNDS, sizeof(a));
+
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
@@ -244,6 +247,7 @@ int main(void)
     }
 
     fclose(file);
+    free(as);
     free(zs);
     return EXIT_SUCCESS;
 }

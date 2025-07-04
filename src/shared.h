@@ -29,9 +29,9 @@ extern int Random_Bytes_Needed;
 /* 8247 bytes = COMMIT_KEY_LEN (23 bytes) + Digest len (32 bytes) + Sigma size (wots signature: 256 * 32 bytes) */
 extern const int INPUT_LEN;
 
-static const uint32_t hA[8];
+extern const uint32_t hA[8];
 
-static const uint32_t k[64];
+extern const uint32_t k[64];
 
 typedef struct
 {
@@ -77,10 +77,6 @@ void output(View v, uint32_t *result);
 
 void reconstruct(uint32_t *y0, uint32_t *y1, uint32_t *y2, uint32_t *result);
 
-void mpc_XOR2(uint32_t x[2], uint32_t y[2], uint32_t z[2]);
-
-void mpc_NEGATE2(uint32_t x[2], uint32_t z[2]);
-
 extern omp_lock_t *locks;
 
 void openmp_locking_callback(int mode, int type, char *file, int line);
@@ -90,23 +86,5 @@ unsigned long openmp_thread_id(void);
 void openmp_thread_setup(void);
 
 void openmp_thread_cleanup(void);
-
-int mpc_AND_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve1, unsigned char randomness[2][2912],
-                   int *randCount, int *countY);
-
-int mpc_ADD_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve1, unsigned char randomness[2][2912],
-                   int *randCount, int *countY);
-
-void mpc_RIGHTROTATE2(uint32_t x[], int i, uint32_t z[]);
-
-void mpc_RIGHTSHIFT2(uint32_t x[2], int i, uint32_t z[2]);
-
-int mpc_MAJ_verify(uint32_t a[2], uint32_t b[2], uint32_t c[2], uint32_t z[3], View ve, View ve1,
-                   unsigned char randomness[2][2912], int *randCount, int *countY);
-
-int mpc_CH_verify(uint32_t e[2], uint32_t f[2], uint32_t g[2], uint32_t z[2], View ve, View ve1,
-                  unsigned char randomness[2][2912], int *randCount, int *countY);
-
-int verify(a a, int e, z z);
 
 #endif // SHARED_H
