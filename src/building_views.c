@@ -178,11 +178,16 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         free(results[i]);
     }
 
+    uint32_t xor_val;
     for (int i = 0; i < 257 * 8; i++)
     {
-        printf("%08x", a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i]);
+        xor_val = a.yp[0][i] ^ a.yp[1][i] ^ a.yp[2][i];
+        if (xor_val != 0)
+        {
+            printf("unexpected non-zero XOR at %d: %08x\n", i, xor_val);
+        }
     }
-    printf("\n");
+
     free(randCount);
     free(countY);
 
