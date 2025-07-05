@@ -79,6 +79,7 @@ int main(void)
         sscanf(&hexInput2[i * 2], "%2x", &byte);
         commitment[i] = (unsigned char)byte;
     }
+    printf("\n");
 
     // Getting WOTS signature
     int c1;
@@ -197,8 +198,7 @@ int main(void)
         }
     }
 
-    /* =============================================================================================================
-     */
+    /* ============================================================================================================ */
 
     // Committing the views
     unsigned char rs[NUM_ROUNDS][3][4]; // Commit keys

@@ -13,7 +13,17 @@ int main(void)
     init_EVP();
     openmp_thread_setup();
 
-    printf("Iterations of SHA: %d\n", NUM_ROUNDS);
+    // Getting m
+    char *message = NULL;
+    size_t bufferSize = 0;
+    printf("\nPlease enter your message:\n");
+    getline(&message, &bufferSize, stdin);
+    message[strlen(message) - 1] = '\0'; // to remove '\n' at the end
+
+    // Computing message digest
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256((unsigned char *)message, strlen(message), digest);
+    free(message);
 
     FILE *file;
 
@@ -26,6 +36,7 @@ int main(void)
     z *zs = malloc(NUM_ROUNDS * sizeof(z));
 
     fread(as, sizeof(a), NUM_ROUNDS, file);
+
     for (int i = 0; i < NUM_ROUNDS; ++i)
     {
         fread(&zs[i], sizeof(z), 1, file);
@@ -40,20 +51,25 @@ int main(void)
     fclose(file);
     /* ============================================================================================================= */
 
-    uint32_t y[8];
-    reconstruct(as[0].yp[0], as[0].yp[1], as[0].yp[2], y);
-    printf("\nProof for hash:\n");
-    for (int i = 0; i < 8; i++)
+    // Verifying Circuit Output
+    uint32_t xor_val;
+    for (int i = 0; i < NUM_ROUNDS; i++)
     {
-        printf("%02X", y[i]);
+        for (int j = 0; j < 257 * 8; j++)
+        {
+            xor_val = as[i].yp[0][j] ^ as[i].yp[1][j] ^ as[i].yp[2][j];
+            if (xor_val != 0)
+            {
+                printf("Unexpected non-zero output at round %d\n", xor_val);
+                fprintf(stderr, "Error: invalid signature\n");
+                exit(EXIT_FAILURE);
+            }
+        }
     }
-    printf("\n\n");
 
     int es[NUM_ROUNDS];
-    H3(y, as, NUM_ROUNDS, es);
+    H3(digest, as, NUM_ROUNDS, es);
 
-    bool consistent;
-    consistent = true;
 #pragma omp parallel for
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
@@ -61,14 +77,12 @@ int main(void)
         if (verifyResult != 0)
         {
             printf("Not Verified, round %d is inconsistent\n", i);
-            consistent = false;
+            fprintf(stderr, "Error: invalid signature\n");
+            exit(EXIT_FAILURE);
         }
     }
 
-    if (consistent)
-    {
-        printf("Verified well !\n");
-    }
+    printf("Verified well !\n");
     openmp_thread_cleanup();
     cleanup_EVP();
     return EXIT_SUCCESS;
