@@ -187,11 +187,12 @@ int main(void)
     /* ============================================== Running Circuit ============================================== */
 
     a *as = calloc(NUM_ROUNDS, sizeof(a));
+    bool error = false;
 
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
-        as[k] = building_views(digest, shares[k], randomness[k], localViews[k], public_key);
+        as[k] = building_views(digest, shares[k], randomness[k], localViews[k], public_key, &error);
         for (int j = 0; j < 3; j++)
         {
             free(randomness[k][j]);
@@ -249,5 +250,13 @@ int main(void)
     fclose(file);
     free(as);
     free(zs);
+
+    printf("================================================================\n");
+    if (error)
+    {
+        fprintf(stderr, "\nError: invalid signature\n\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("\nProof generated successfully in 'proof.bin'.\n\n");
     return EXIT_SUCCESS;
 }

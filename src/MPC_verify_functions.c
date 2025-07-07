@@ -304,40 +304,24 @@ int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned c
     }
 }
 
-int verify(a a, int e, z z)
+void verify(unsigned char digest[32], bool *error, a a, int e, z z)
 {
+    // Verifying views' commitments
     unsigned char *hash = malloc(SHA256_DIGEST_LENGTH);
     H(z.ke, z.ve, z.re, hash);
-
     if (memcmp(a.h[e], hash, 32) != 0)
     {
         printf("Failing at %d", __LINE__);
-        return 1;
+        *error = true;
     }
+
     H(z.ke1, z.ve1, z.re1, hash);
     if (memcmp(a.h[(e + 1) % 3], hash, 32) != 0)
     {
         printf("Failing at %d", __LINE__);
-        return 1;
+        *error = true;
     }
     free(hash);
-
-    uint32_t *result = malloc(32);
-    output(z.ve, result);
-    if (memcmp(a.yp[e], result, 32) != 0)
-    {
-        printf("Failing at %d", __LINE__);
-        return 1;
-    }
-
-    output(z.ve1, result);
-    if (memcmp(a.yp[(e + 1) % 3], result, 32) != 0)
-    {
-        printf("Failing at %d", __LINE__);
-        return 1;
-    }
-
-    free(result);
 
     unsigned char randomness[2][Random_Bytes_Needed];
     getAllRandomness(z.ke, randomness[0], Random_Bytes_Needed);
@@ -346,8 +330,16 @@ int verify(a a, int e, z z)
     int *randCount = calloc(1, sizeof(int));
     int *countY = calloc(1, sizeof(int));
 
+    // Verifying Circuit
+
+    // Verifying siganture's commitment proof
+    if (mpc_sha256_verify(randCount, countY, z.ve, z.ve1, randomness, z) == 1)
+    {
+        *error = true;
+        printf("Failing at %d", __LINE__);
+    }
+
     free(randCount);
     free(countY);
-
-    return 0;
+    return;
 }

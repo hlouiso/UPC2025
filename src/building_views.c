@@ -2,13 +2,14 @@
 #include "MPC_prove_functions.h"
 #include "shared.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], unsigned char *randomness[3],
-                 View views[3], unsigned char public_key[8192])
+                 View views[3], unsigned char public_key[8192], bool *error)
 {
     // Declaring the output a
     a a;
@@ -50,11 +51,9 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
         for (int j = 0; j < 3; j++)
         {
-            views[j].y[*countY] = tmp[j];
             memcpy(&a.yp[j][index_in_a], &tmp[j], 4);
         }
         index_in_a++;
-        (*countY)++;
     }
 
     // Verifying signature
@@ -107,10 +106,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             bit_pos = 7 - (i & 7);
             uint32_t b = (v >> bit_pos) & 1;
             mask[j] = 0u - b;
-            views[j].y[*countY] = mask[j];
         }
-
-        *(countY) += 1;
 
         for (int j = 0; j < 8; j++)
         {
@@ -140,10 +136,8 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
             for (int k = 0; k < 3; k++)
             {
-                views[k].y[*countY] = tmp[k];
                 verif_result[k][j] = tmp[k];
             }
-            (*countY)++;
         }
 
         // Xoring with public_key[i]
@@ -157,12 +151,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             memcpy(&t1[0], public_key + index_in_pub_key + 4 * j, 4);
 
             mpc_XOR(t0, t1, tmp);
-
-            for (int k = 0; k < 3; k++)
-            {
-                views[k].y[*countY] = tmp[k];
-            }
-            (*countY)++;
 
             for (int k = 0; k < 3; k++)
             {
@@ -185,6 +173,7 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         if (xor_val != 0)
         {
             printf("unexpected non-zero XOR at %d: %08x\n", i, xor_val);
+            *error = true;
         }
     }
 

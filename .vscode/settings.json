@@ -8,6 +8,7 @@
         "building_views.h": "c",
         "omp.h": "c",
         "mpc_prove_functions.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "stdint.h": "c"
     }
 }

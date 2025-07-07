@@ -69,21 +69,23 @@ int main(void)
 
     int es[NUM_ROUNDS];
     H3(digest, as, NUM_ROUNDS, es);
+    bool error = false;
 
 #pragma omp parallel for
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
-        int verifyResult = verify(as[i], es[i], zs[i]);
-        if (verifyResult != 0)
-        {
-            printf("Not Verified, round %d is inconsistent\n", i);
-            fprintf(stderr, "Error: invalid signature\n");
-            exit(EXIT_FAILURE);
-        }
+        verify(digest, &error, as[i], es[i], zs[i]);
     }
 
     printf("Verified well !\n");
     openmp_thread_cleanup();
     cleanup_EVP();
+    printf("================================================================\n");
+    if (error)
+    {
+        fprintf(stderr, "Error: invalid signature\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("\nProof verified successfully.\n\n");
     return EXIT_SUCCESS;
 }

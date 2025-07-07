@@ -22,12 +22,12 @@ extern int ySize;
 extern const int output_nb_in_uint32;
 extern int Random_Bytes_Needed;
 
+/* 8247 bytes = COMMIT_KEY_LEN (23 bytes) + Digest len (32 bytes) + Sigma size (wots signature: 256 * 32 bytes) */
+extern const int INPUT_LEN;
+
 #define RIGHTROTATE(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 #define GETBIT(x, i) (((x) >> (i)) & 0x01)
 #define SETBIT(x, i, b) x = (b) & 1 ? (x) | (1 << (i)) : (x) & (~(1 << (i)))
-
-/* 8247 bytes = COMMIT_KEY_LEN (23 bytes) + Digest len (32 bytes) + Sigma size (wots signature: 256 * 32 bytes) */
-extern const int INPUT_LEN;
 
 extern const uint32_t hA[8];
 
