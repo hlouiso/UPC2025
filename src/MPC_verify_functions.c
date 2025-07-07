@@ -112,49 +112,8 @@ void mpc_NEGATE2(uint32_t x[2], uint32_t z[2])
     z[1] = ~x[1];
 }
 
-int verify(a a, int e, z z)
+int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned char randomness[2][2912], z z)
 {
-    unsigned char *hash = malloc(SHA256_DIGEST_LENGTH);
-    H(z.ke, z.ve, z.re, hash);
-
-    if (memcmp(a.h[e], hash, 32) != 0)
-    {
-        printf("Failing at %d", __LINE__);
-        return 1;
-    }
-    H(z.ke1, z.ve1, z.re1, hash);
-    if (memcmp(a.h[(e + 1) % 3], hash, 32) != 0)
-    {
-        printf("Failing at %d", __LINE__);
-        return 1;
-    }
-    free(hash);
-
-    uint32_t *result = malloc(32);
-    output(z.ve, result);
-    if (memcmp(a.yp[e], result, 32) != 0)
-    {
-        printf("Failing at %d", __LINE__);
-        return 1;
-    }
-
-    output(z.ve1, result);
-    if (memcmp(a.yp[(e + 1) % 3], result, 32) != 0)
-    {
-        printf("Failing at %d", __LINE__);
-        return 1;
-    }
-
-    free(result);
-
-    int Bytes_Needed = 2912;
-    unsigned char randomness[2][Bytes_Needed];
-    getAllRandomness(z.ke, randomness[0], Bytes_Needed);
-    getAllRandomness(z.ke1, randomness[1], Bytes_Needed);
-
-    int *randCount = calloc(1, sizeof(int));
-    int *countY = calloc(1, sizeof(int));
-
     uint32_t w[64][2];
     for (int j = 0; j < 16; j++)
     {
@@ -343,6 +302,49 @@ int verify(a a, int e, z z)
         printf("Failing at %d", __LINE__);
         return 1;
     }
+}
+
+int verify(a a, int e, z z)
+{
+    unsigned char *hash = malloc(SHA256_DIGEST_LENGTH);
+    H(z.ke, z.ve, z.re, hash);
+
+    if (memcmp(a.h[e], hash, 32) != 0)
+    {
+        printf("Failing at %d", __LINE__);
+        return 1;
+    }
+    H(z.ke1, z.ve1, z.re1, hash);
+    if (memcmp(a.h[(e + 1) % 3], hash, 32) != 0)
+    {
+        printf("Failing at %d", __LINE__);
+        return 1;
+    }
+    free(hash);
+
+    uint32_t *result = malloc(32);
+    output(z.ve, result);
+    if (memcmp(a.yp[e], result, 32) != 0)
+    {
+        printf("Failing at %d", __LINE__);
+        return 1;
+    }
+
+    output(z.ve1, result);
+    if (memcmp(a.yp[(e + 1) % 3], result, 32) != 0)
+    {
+        printf("Failing at %d", __LINE__);
+        return 1;
+    }
+
+    free(result);
+
+    unsigned char randomness[2][Random_Bytes_Needed];
+    getAllRandomness(z.ke, randomness[0], Random_Bytes_Needed);
+    getAllRandomness(z.ke1, randomness[1], Random_Bytes_Needed);
+
+    int *randCount = calloc(1, sizeof(int));
+    int *countY = calloc(1, sizeof(int));
 
     free(randCount);
     free(countY);
