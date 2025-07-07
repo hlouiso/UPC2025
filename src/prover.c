@@ -170,7 +170,21 @@ int main(void)
             memcpy(localViews[k][j].x, shares[k][j], INPUT_LEN);
         }
     }
-
+    // Affichage des 23 premiers octets des 3 shares en hexadécimal
+    printf("Affichage des 23 premiers octets des shares :\n");
+    for (int k = 0; k < NUM_ROUNDS; k++)
+    {
+        printf("Round %d:\n", k);
+        for (int j = 0; j < 3; j++)
+        {
+            printf("Share[%d]: ", j);
+            for (int i = 0; i < 23; i++)
+            { // Limite à 23 octets
+                printf("%02X", shares[k][j][i]);
+            }
+            printf("\n");
+        }
+    }
     // Generating randomness
     unsigned char *randomness[NUM_ROUNDS][3];
 #pragma omp parallel for
@@ -232,6 +246,7 @@ int main(void)
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
         zs[i] = prove(es[i], keys[i], rs[i], localViews[i]);
+        printf("es[%d] = %d\n", i, es[i]);
     }
 
     // Writing to file

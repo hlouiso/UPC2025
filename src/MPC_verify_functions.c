@@ -1,3 +1,4 @@
+#include "MPC_verify_functions.h"
 #include "shared.h"
 
 #include <stdbool.h>
@@ -112,15 +113,9 @@ void mpc_NEGATE2(uint32_t x[2], uint32_t z[2])
     z[1] = ~x[1];
 }
 
-int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned char randomness[2][2912], z z)
+int mpc_sha256_verify(uint32_t w[64][2], int *randCount, int *countY, View ve, View ve1,
+                      unsigned char randomness[2][2912], z z)
 {
-    uint32_t w[64][2];
-    for (int j = 0; j < 16; j++)
-    {
-        w[j][0] = (z.ve.x[j * 4] << 24) | (z.ve.x[j * 4 + 1] << 16) | (z.ve.x[j * 4 + 2] << 8) | z.ve.x[j * 4 + 3];
-        w[j][1] = (z.ve1.x[j * 4] << 24) | (z.ve1.x[j * 4 + 1] << 16) | (z.ve1.x[j * 4 + 2] << 8) | z.ve1.x[j * 4 + 3];
-    }
-
     uint32_t s0[2], s1[2];
     uint32_t t0[2], t1[2];
     for (int j = 16; j < 64; j++)
@@ -330,10 +325,46 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
     int *randCount = calloc(1, sizeof(int));
     int *countY = calloc(1, sizeof(int));
 
-    // Verifying Circuit
+    /* Verifying Circuit */
+    int index_in_x = 0;
+    uint32_t w[64][2] = {0};
 
-    // Verifying siganture's commitment proof
-    if (mpc_sha256_verify(randCount, countY, z.ve, z.ve1, randomness, z) == 1)
+    // Verifying signature's commitment proof
+    if (e == 0)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            w[i][0] = (digest[i * 4] << 24) | (digest[i * 4 + 1] << 16) | (digest[i * 4 + 2] << 8) | digest[i * 4 + 3];
+        }
+    }
+
+    if (e == 2)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            w[i][1] = (digest[i * 4] << 24) | (digest[i * 4 + 1] << 16) | (digest[i * 4 + 2] << 8) | digest[i * 4 + 3];
+        }
+    }
+
+    for (int i = 0; i < 5; i++)
+    {
+        w[8 + i][0] = (z.ve.x[i * 4] << 24) | (z.ve.x[i * 4 + 1] << 16) | (z.ve.x[i * 4 + 2] << 8) | z.ve.x[i * 4 + 3];
+
+        w[8 + i][1] =
+            (z.ve1.x[i * 4] << 24) | (z.ve1.x[i * 4 + 1] << 16) | (z.ve1.x[i * 4 + 2] << 8) | z.ve1.x[i * 4 + 3];
+    }
+
+    w[8 + 5][0] = (z.ve.x[5 * 4] << 24) | (z.ve.x[5 * 4 + 1] << 16) | (z.ve.x[5 * 4 + 2] << 8);
+
+    w[8 + 5][1] = (z.ve1.x[5 * 4] << 24) | (z.ve1.x[5 * 4 + 1] << 16) | (z.ve1.x[5 * 4 + 2] << 8);
+
+    // Affichage des valeurs de w en hexadécimal
+    for (int i = 0; i < 64; i++)
+    {
+        printf("w[%d][0] = %08X, w[%d][1] = %08X\n", i, w[i][0], i, w[i][1]);
+    }
+
+    if (mpc_sha256_verify(w, randCount, countY, z.ve, z.ve1, randomness, z) == 1)
     {
         *error = true;
         printf("Failing at %d", __LINE__);
