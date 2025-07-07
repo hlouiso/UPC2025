@@ -163,7 +163,7 @@ int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned c
     uint32_t vb[2] = {hA[1], hA[1]};
     uint32_t vc[2] = {hA[2], hA[2]};
     uint32_t vd[2] = {hA[3], hA[3]};
-    uint32_t ve[2] = {hA[4], hA[4]};
+    uint32_t v_e[2] = {hA[4], hA[4]};
     uint32_t vf[2] = {hA[5], hA[5]};
     uint32_t vg[2] = {hA[6], hA[6]};
     uint32_t vh[2] = {hA[7], hA[7]};
@@ -171,10 +171,10 @@ int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned c
     for (int i = 0; i < 64; i++)
     {
         // s1 = RIGHTROTATE(e,6) ^ RIGHTROTATE(e,11) ^ RIGHTROTATE(e,25);
-        mpc_RIGHTROTATE2(ve, 6, t0);
-        mpc_RIGHTROTATE2(ve, 11, t1);
+        mpc_RIGHTROTATE2(v_e, 6, t0);
+        mpc_RIGHTROTATE2(v_e, 11, t1);
         mpc_XOR2(t0, t1, t0);
-        mpc_RIGHTROTATE2(ve, 25, t1);
+        mpc_RIGHTROTATE2(v_e, 25, t1);
         mpc_XOR2(t0, t1, s1);
 
         // ch = (e & f) ^ ((~e) & g);
@@ -188,7 +188,7 @@ int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned c
             return 1;
         }
 
-        if (mpc_CH_verify(ve, vf, vg, t1, z.ve, z.ve1, randomness, randCount, countY) == 1)
+        if (mpc_CH_verify(v_e, vf, vg, t1, z.ve, z.ve1, randomness, randCount, countY) == 1)
         {
             printf("Failing at %d, iteration %d", __LINE__, i);
             return 1;
@@ -240,9 +240,9 @@ int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned c
 
         memcpy(vh, vg, sizeof(uint32_t) * 2);
         memcpy(vg, vf, sizeof(uint32_t) * 2);
-        memcpy(vf, ve, sizeof(uint32_t) * 2);
+        memcpy(vf, v_e, sizeof(uint32_t) * 2);
         // e = d+temp1;
-        if (mpc_ADD_verify(vd, temp1, ve, z.ve, z.ve1, randomness, randCount, countY) == 1)
+        if (mpc_ADD_verify(vd, temp1, v_e, z.ve, z.ve1, randomness, randCount, countY) == 1)
         {
             printf("Failing at %d, iteration %d", __LINE__, i);
             return 1;
@@ -282,7 +282,7 @@ int mpc_sha256_verify(int *randCount, int *countY, View ve, View ve1, unsigned c
         printf("Failing at %d", __LINE__);
         return 1;
     }
-    if (mpc_ADD_verify(hHa[4], ve, hHa[4], z.ve, z.ve1, randomness, randCount, countY) == 1)
+    if (mpc_ADD_verify(hHa[4], v_e, hHa[4], z.ve, z.ve1, randomness, randCount, countY) == 1)
     {
         printf("Failing at %d", __LINE__);
         return 1;
