@@ -1,6 +1,7 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -13,6 +14,7 @@
 
 #define VERBOSE FALSE
 
+extern bool first;
 extern const int COMMIT_KEY_LEN;
 extern const int COMMIT_LEN;
 extern const int NUM_ROUNDS;

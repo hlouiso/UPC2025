@@ -19,6 +19,7 @@ int main(void)
     printf("\nPlease enter your message:\n");
     getline(&message, &bufferSize, stdin);
     message[strlen(message) - 1] = '\0'; // to remove '\n' at the end
+    printf("\n");
 
     // Computing message digest
     unsigned char digest[SHA256_DIGEST_LENGTH];

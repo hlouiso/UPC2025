@@ -1,5 +1,6 @@
 #include "shared.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -13,6 +14,7 @@
 #include "omp.h"
 #include <openssl/rand.h>
 
+bool first = true;
 const int COMMIT_KEY_LEN = 23;
 const int COMMIT_LEN = 32;
 const int NUM_ROUNDS = 1; // Usually 136

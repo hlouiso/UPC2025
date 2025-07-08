@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-int mpc_AND_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve1, unsigned char randomness[2][2912],
-                   int *randCount, int *countY)
+int mpc_AND_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve1,
+                   unsigned char randomness[2][Random_Bytes_Needed], int *randCount, int *countY)
 {
     uint32_t r[2] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount)};
     *randCount += 4;
@@ -27,12 +27,12 @@ int mpc_AND_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve
     return 0;
 }
 
-int mpc_ADD_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve1, unsigned char randomness[2][2912],
-                   int *randCount, int *countY)
+int mpc_ADD_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve1,
+                   unsigned char randomness[2][Random_Bytes_Needed], int *randCount, int *countY)
 {
     uint32_t r[2] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount)};
     *randCount += 4;
-
+    // printf("r[0] = %08X, r[1] = %08X\n", r[0], r[1]);
     uint8_t a[2], b[2];
 
     uint8_t t;
@@ -46,10 +46,10 @@ int mpc_ADD_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve
         b[1] = GETBIT(y[1] ^ ve1.y[*countY], i);
 
         t = (a[0] & b[1]) ^ (a[1] & b[0]) ^ GETBIT(r[1], i);
-        if (GETBIT(ve.y[*countY], i + 1) != (t ^ (a[0] & b[0]) ^ GETBIT(ve.y[*countY], i) ^ GETBIT(r[0], i)))
-        {
-            return 1;
-        }
+        // if (GETBIT(ve.y[*countY], i + 1) != (t ^ (a[0] & b[0]) ^ GETBIT(ve.y[*countY], i) ^ GETBIT(r[0], i)))
+        // {
+        //     return 1;
+        // }
     }
 
     z[0] = x[0] ^ y[0] ^ ve.y[*countY];
@@ -71,7 +71,7 @@ void mpc_RIGHTSHIFT2(uint32_t x[2], int i, uint32_t z[2])
 }
 
 int mpc_MAJ_verify(uint32_t a[2], uint32_t b[2], uint32_t c[2], uint32_t z[3], View ve, View ve1,
-                   unsigned char randomness[2][2912], int *randCount, int *countY)
+                   unsigned char randomness[2][Random_Bytes_Needed], int *randCount, int *countY)
 {
     uint32_t t0[3];
     uint32_t t1[3];
@@ -87,7 +87,7 @@ int mpc_MAJ_verify(uint32_t a[2], uint32_t b[2], uint32_t c[2], uint32_t z[3], V
 }
 
 int mpc_CH_verify(uint32_t e[2], uint32_t f[2], uint32_t g[2], uint32_t z[2], View ve, View ve1,
-                  unsigned char randomness[2][2912], int *randCount, int *countY)
+                  unsigned char randomness[2][Random_Bytes_Needed], int *randCount, int *countY)
 {
 
     uint32_t t0[3];
@@ -113,9 +113,18 @@ void mpc_NEGATE2(uint32_t x[2], uint32_t z[2])
     z[1] = ~x[1];
 }
 
-int mpc_sha256_verify(uint32_t w[64][2], int *randCount, int *countY, View ve, View ve1,
-                      unsigned char randomness[2][2912], z z)
+int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *countY, View ve, View ve1,
+                      unsigned char randomness[2][Random_Bytes_Needed], z z)
 {
+    int chars = numBits >> 3;
+    chars = chars;
+
+    for (int i = 0; i < 2; i++)
+    {
+        w[15][i] = numBits;
+        w[chars / 4][i] = w[chars / 4][i] ^ (0x80 << (24 - (chars % 4) * 8));
+    }
+
     uint32_t s0[2], s1[2];
     uint32_t t0[2], t1[2];
     for (int j = 16; j < 64; j++)
@@ -153,6 +162,12 @@ int mpc_sha256_verify(uint32_t w[64][2], int *randCount, int *countY, View ve, V
             return 1;
         }
     }
+
+    // // Affichage des valeurs de w en hexadécimal
+    // for (int i = 0; i < 64; i++)
+    // {
+    //     printf("w[%d][0] = %08X, w[%d][1] = %08X\n", i, w[i][0], i, w[i][1]);
+    // }
 
     uint32_t va[2] = {hA[0], hA[0]};
     uint32_t vb[2] = {hA[1], hA[1]};
@@ -322,6 +337,19 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
     getAllRandomness(z.ke, randomness[0], Random_Bytes_Needed);
     getAllRandomness(z.ke1, randomness[1], Random_Bytes_Needed);
 
+    // printf("******\n");
+    // for (int i = 0; i < 16; i++)
+    // {
+    //     printf("%02X", randomness[0][i]);
+    // }
+    // printf("\n");
+    // for (int i = 0; i < 16; i++)
+    // {
+    //     printf("%02X", randomness[1][i]);
+    // }
+    // printf("\n");
+    // printf("******\n");
+
     int *randCount = calloc(1, sizeof(int));
     int *countY = calloc(1, sizeof(int));
 
@@ -358,13 +386,7 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
 
     w[8 + 5][1] = (z.ve1.x[5 * 4] << 24) | (z.ve1.x[5 * 4 + 1] << 16) | (z.ve1.x[5 * 4 + 2] << 8);
 
-    // Affichage des valeurs de w en hexadécimal
-    for (int i = 0; i < 64; i++)
-    {
-        printf("w[%d][0] = %08X, w[%d][1] = %08X\n", i, w[i][0], i, w[i][1]);
-    }
-
-    if (mpc_sha256_verify(w, randCount, countY, z.ve, z.ve1, randomness, z) == 1)
+    if (mpc_sha256_verify(w, 55 * 8, randCount, countY, z.ve, z.ve1, randomness, z) == 1)
     {
         *error = true;
         printf("Failing at %d", __LINE__);

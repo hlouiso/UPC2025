@@ -45,6 +45,12 @@ void mpc_ADD(uint32_t x[3], uint32_t y[3], uint32_t z[3], unsigned char *randomn
     uint32_t c[3] = {0};
     uint32_t r[3] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount),
                      getRandom32(randomness[2], *randCount)};
+
+    // if (first)
+    // {
+    //     printf("r[0] = %08X, r[1] = %08X, r[2] = %08X\n", r[0], r[1], r[2]);
+    // }
+
     *randCount += 4;
     uint8_t a[3], b[3];
 
@@ -162,7 +168,6 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
 void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], char *results[3], View views[3],
                 int *countY, int *randCount)
 {
-
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
@@ -202,6 +207,16 @@ void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness
         mpc_ADD(w[j - 7], t1, t1, randomness, randCount, views, countY);
         mpc_ADD(t1, s1, w[j], randomness, randCount, views, countY);
     }
+    first = false;
+    // if (first)
+    // {
+    //     // Affichage des valeurs de w en hexadécimal
+    //     for (int i = 0; i < 64; i++)
+    //     {
+    //         printf("w[%d][0] = %08X, w[%d][1] = %08X, w[%d][2] = %08X\n", i, w[i][0], i, w[i][1], i, w[i][2]);
+    //     }
+    // }
+    // first = false;
 
     uint32_t a[3] = {hA[0], hA[0], hA[0]};
     uint32_t b[3] = {hA[1], hA[1], hA[1]};
