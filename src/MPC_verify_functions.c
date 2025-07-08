@@ -356,6 +356,7 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
     /* Verifying Circuit */
     int index_in_x = 0;
     uint32_t w[64][2] = {0};
+    int index_in_a = 0;
 
     // Verifying signature's commitment proof
     if (e == 0)
@@ -390,6 +391,22 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
     {
         *error = true;
         printf("Failing at %d", __LINE__);
+    }
+
+    // xoring with secret commitment
+    uint32_t t0[2], t1[2], tmp[2];
+    index_in_x = 23;
+    for (int i = 0; i < 8; i++)
+    {
+        /* Il faut chercher le result de MPCsha256 puis xor avec x[23 à 54], puis vérifier que le résultat est bien dans
+          a.yp[e][index_in_a] et a.yp[(e + 1) % 3][index_in_a] */
+
+        if ((tmp[0] != a.yp[e][index_in_a]) || (tmp[1] != a.yp[(e + 1) % 3][index_in_a]))
+        {
+            *error = true;
+            printf("Failing at %d, index_in_a = %d\n", __LINE__, index_in_a);
+        }
+        index_in_a++;
     }
 
     free(randCount);

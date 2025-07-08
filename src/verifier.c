@@ -78,7 +78,6 @@ int main(void)
         verify(digest, &error, as[i], es[i], zs[i]);
     }
 
-    printf("Verified well !\n");
     openmp_thread_cleanup();
     cleanup_EVP();
     printf("================================================================\n");
