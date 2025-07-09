@@ -207,7 +207,6 @@ void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness
         mpc_ADD(w[j - 7], t1, t1, randomness, randCount, views, countY);
         mpc_ADD(t1, s1, w[j], randomness, randCount, views, countY);
     }
-    first = false;
     // if (first)
     // {
     //     // Affichage des valeurs de w en hexadécimal

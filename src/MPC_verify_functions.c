@@ -163,12 +163,6 @@ int mpc_sha256_verify(uint32_t w[64][2], unsigned char *results[2], int numBits,
         }
     }
 
-    // // Affichage des valeurs de w en hexadécimal
-    // for (int i = 0; i < 64; i++)
-    // {
-    //     printf("w[%d][0] = %08X, w[%d][1] = %08X\n", i, w[i][0], i, w[i][1]);
-    // }
-
     uint32_t va[2] = {hA[0], hA[0]};
     uint32_t vb[2] = {hA[1], hA[1]};
     uint32_t vc[2] = {hA[2], hA[2]};
@@ -330,29 +324,6 @@ int mpc_sha256_verify(uint32_t w[64][2], unsigned char *results[2], int numBits,
     }
     *countY += 8;
 
-    // printf("\ncountY = %d\n: ", *countY);
-    // printf("Affichage des results :\n");
-    // printf("\nresults[0]\n");
-    // for (int i = 0; i < 32; i++)
-    // {
-    //     printf("%02X", results[0][i]);
-    // }
-    // printf("\nresults[1]\n");
-    // for (int i = 0; i < 32; i++)
-    // {
-    //     printf("%02X", results[1][i]);
-    // }
-    // printf("\ny0\n");
-    // for (int i = 0; i < 8; i++)
-    // {
-    //     printf("%08X", z.ve.y[728 + i]);
-    // }
-    // printf("\ny1\n");
-    // for (int i = 0; i < 8; i++)
-    // {
-    //     printf("%08X", z.ve1.y[728 + i]);
-    // }
-    // printf("\n\n");
     return 0;
 }
 
@@ -467,7 +438,8 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
     for (int i = 0; i < 256; i++)
     {
         index_in_x = 55 + 32 * i;
-        uint32_t w[64][2] = {0};
+        memset(w, 0, sizeof(w));
+
         for (int j = 0; j < 8; j++)
         {
             w[j][0] = (z.ve.x[index_in_x + 4 * j] << 24) | (z.ve.x[index_in_x + 4 * j + 1] << 16) |
@@ -485,8 +457,8 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
 
         for (int j = 0; j < 8; j++)
         {
-            memcpy(&t0[0], results[0] + i * 4, 4);
-            memcpy(&t0[1], results[1] + i * 4, 4);
+            memcpy(&t0[0], results[0] + j * 4, 4);
+            memcpy(&t0[1], results[1] + j * 4, 4);
 
             memcpy(&t1[0], z.ve.x + index_in_x + j * 4, 4);
             memcpy(&t1[1], z.ve1.x + index_in_x + j * 4, 4);
@@ -530,6 +502,7 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
             }
         }
 
+        // Xoring with sha256 of WOTS_signature[i]
         for (int j = 0; j < 8; j++)
         {
             t0[0] = verif_result[0][j];
@@ -547,7 +520,6 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
         }
 
         // Xoring with public_key[i]
-
         for (int j = 0; j < 8; j++)
         {
             if (e == 0)
@@ -570,7 +542,6 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
 
                 verif_result[1][j] = tmp[0];
             }
-            index_in_pub_key += 32;
 
             tmp[0] = verif_result[0][j];
             tmp[1] = verif_result[1][j];
@@ -582,6 +553,17 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
             }
             index_in_a++;
         }
+        index_in_pub_key += 32;
+
+        // for (int bloc = 0; bloc < 2; bloc++)
+        // {
+        //     printf("Bloc %d :\n", bloc);
+        //     for (int i = 0; i < 8; i++)
+        //     {
+        //         printf("%08x", verif_result[bloc][i]);
+        //     }
+        //     printf("\n");
+        // }
     }
 
     free(results[0]);

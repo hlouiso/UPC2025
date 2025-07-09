@@ -76,7 +76,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
 
         mpc_sha256(inputs, SHA256_DIGEST_LENGTH * 8, randomness, results, views, countY, randCount);
 
-        // Xoring the result with WOTS_signature[i]
         uint32_t verif_result[3][8];
 
         for (int j = 0; j < 8; j++)
@@ -123,7 +122,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             }
         }
 
-        // Xoring with sha256 of WOTS_signature[i]
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -140,7 +138,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
             }
         }
 
-        // Xoring with public_key[i]
         for (int j = 0; j < 8; j++)
         {
             for (int k = 0; k < 3; k++)
