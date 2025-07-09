@@ -18,7 +18,7 @@ bool first = true;
 const int COMMIT_KEY_LEN = 23;
 const int COMMIT_LEN = 32;
 const int NUM_ROUNDS = 1; // Usually 136
-const mpc_sha256_size = 736;
+const int mpc_sha256_size = 736;
 const int mpc_sha256_runs = 257;
 int ySize = mpc_sha256_runs * mpc_sha256_size + 8 * 256;
 const int output_nb_in_uint32 = 257 * 8; // knowing that one output = 256 bits = 8 uint32_t

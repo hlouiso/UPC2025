@@ -29,6 +29,6 @@ void mpc_XOR2(uint32_t x[2], uint32_t y[2], uint32_t z[2]);
 
 void mpc_NEGATE2(uint32_t x[2], uint32_t z[2]);
 
-void verify(unsigned char digest[32], bool *error, a a, int e, z z);
+void verify(unsigned char digest[32], unsigned char public_key[8192], bool *error, a a, int e, z z);
 
 #endif // MPC_VERIFY_FUNCTIONS_H

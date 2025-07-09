@@ -165,8 +165,8 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
     mpc_XOR(t0, g, z);
 }
 
-void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], char *results[3], View views[3],
-                int *countY, int *randCount)
+void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], unsigned char *results[3],
+                View views[3], int *countY, int *randCount)
 {
     int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];

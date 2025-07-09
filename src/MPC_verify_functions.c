@@ -46,10 +46,10 @@ int mpc_ADD_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve
         b[1] = GETBIT(y[1] ^ ve1.y[*countY], i);
 
         t = (a[0] & b[1]) ^ (a[1] & b[0]) ^ GETBIT(r[1], i);
-        // if (GETBIT(ve.y[*countY], i + 1) != (t ^ (a[0] & b[0]) ^ GETBIT(ve.y[*countY], i) ^ GETBIT(r[0], i)))
-        // {
-        //     return 1;
-        // }
+        if (GETBIT(ve.y[*countY], i + 1) != (t ^ (a[0] & b[0]) ^ GETBIT(ve.y[*countY], i) ^ GETBIT(r[0], i)))
+        {
+            return 1;
+        }
     }
 
     z[0] = x[0] ^ y[0] ^ ve.y[*countY];
@@ -113,7 +113,7 @@ void mpc_NEGATE2(uint32_t x[2], uint32_t z[2])
     z[1] = ~x[1];
 }
 
-int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *countY, View ve, View ve1,
+int mpc_sha256_verify(uint32_t w[64][2], unsigned char *results[2], int numBits, int *randCount, int *countY,
                       unsigned char randomness[2][Random_Bytes_Needed], z z)
 {
     int chars = numBits >> 3;
@@ -173,7 +173,7 @@ int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *count
     uint32_t vb[2] = {hA[1], hA[1]};
     uint32_t vc[2] = {hA[2], hA[2]};
     uint32_t vd[2] = {hA[3], hA[3]};
-    uint32_t v_e[2] = {hA[4], hA[4]};
+    uint32_t ve[2] = {hA[4], hA[4]};
     uint32_t vf[2] = {hA[5], hA[5]};
     uint32_t vg[2] = {hA[6], hA[6]};
     uint32_t vh[2] = {hA[7], hA[7]};
@@ -181,10 +181,10 @@ int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *count
     for (int i = 0; i < 64; i++)
     {
         // s1 = RIGHTROTATE(e,6) ^ RIGHTROTATE(e,11) ^ RIGHTROTATE(e,25);
-        mpc_RIGHTROTATE2(v_e, 6, t0);
-        mpc_RIGHTROTATE2(v_e, 11, t1);
+        mpc_RIGHTROTATE2(ve, 6, t0);
+        mpc_RIGHTROTATE2(ve, 11, t1);
         mpc_XOR2(t0, t1, t0);
-        mpc_RIGHTROTATE2(v_e, 25, t1);
+        mpc_RIGHTROTATE2(ve, 25, t1);
         mpc_XOR2(t0, t1, s1);
 
         // ch = (e & f) ^ ((~e) & g);
@@ -198,7 +198,7 @@ int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *count
             return 1;
         }
 
-        if (mpc_CH_verify(v_e, vf, vg, t1, z.ve, z.ve1, randomness, randCount, countY) == 1)
+        if (mpc_CH_verify(ve, vf, vg, t1, z.ve, z.ve1, randomness, randCount, countY) == 1)
         {
             printf("Failing at %d, iteration %d", __LINE__, i);
             return 1;
@@ -250,9 +250,9 @@ int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *count
 
         memcpy(vh, vg, sizeof(uint32_t) * 2);
         memcpy(vg, vf, sizeof(uint32_t) * 2);
-        memcpy(vf, v_e, sizeof(uint32_t) * 2);
+        memcpy(vf, ve, sizeof(uint32_t) * 2);
         // e = d+temp1;
-        if (mpc_ADD_verify(vd, temp1, v_e, z.ve, z.ve1, randomness, randCount, countY) == 1)
+        if (mpc_ADD_verify(vd, temp1, ve, z.ve, z.ve1, randomness, randCount, countY) == 1)
         {
             printf("Failing at %d, iteration %d", __LINE__, i);
             return 1;
@@ -292,7 +292,7 @@ int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *count
         printf("Failing at %d", __LINE__);
         return 1;
     }
-    if (mpc_ADD_verify(hHa[4], v_e, hHa[4], z.ve, z.ve1, randomness, randCount, countY) == 1)
+    if (mpc_ADD_verify(hHa[4], ve, hHa[4], z.ve, z.ve1, randomness, randCount, countY) == 1)
     {
         printf("Failing at %d", __LINE__);
         return 1;
@@ -312,9 +312,51 @@ int mpc_sha256_verify(uint32_t w[64][2], int numBits, int *randCount, int *count
         printf("Failing at %d", __LINE__);
         return 1;
     }
+
+    for (int i = 0; i < 8; i++)
+    {
+        mpc_RIGHTSHIFT2(hHa[i], 24, t0);
+        results[0][i * 4] = t0[0];
+        results[1][i * 4] = t0[1];
+        mpc_RIGHTSHIFT2(hHa[i], 16, t0);
+        results[0][i * 4 + 1] = t0[0];
+        results[1][i * 4 + 1] = t0[1];
+        mpc_RIGHTSHIFT2(hHa[i], 8, t0);
+        results[0][i * 4 + 2] = t0[0];
+        results[1][i * 4 + 2] = t0[1];
+
+        results[0][i * 4 + 3] = hHa[i][0];
+        results[1][i * 4 + 3] = hHa[i][1];
+    }
+    *countY += 8;
+
+    // printf("\ncountY = %d\n: ", *countY);
+    // printf("Affichage des results :\n");
+    // printf("\nresults[0]\n");
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("%02X", results[0][i]);
+    // }
+    // printf("\nresults[1]\n");
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("%02X", results[1][i]);
+    // }
+    // printf("\ny0\n");
+    // for (int i = 0; i < 8; i++)
+    // {
+    //     printf("%08X", z.ve.y[728 + i]);
+    // }
+    // printf("\ny1\n");
+    // for (int i = 0; i < 8; i++)
+    // {
+    //     printf("%08X", z.ve1.y[728 + i]);
+    // }
+    // printf("\n\n");
+    return 0;
 }
 
-void verify(unsigned char digest[32], bool *error, a a, int e, z z)
+void verify(unsigned char digest[32], unsigned char public_key[8192], bool *error, a a, int e, z z)
 {
     // Verifying views' commitments
     unsigned char *hash = malloc(SHA256_DIGEST_LENGTH);
@@ -357,6 +399,9 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
     int index_in_x = 0;
     uint32_t w[64][2] = {0};
     int index_in_a = 0;
+    unsigned char *results[2];
+    results[0] = malloc(32);
+    results[1] = malloc(32);
 
     // Verifying signature's commitment proof
     if (e == 0)
@@ -387,7 +432,7 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
 
     w[8 + 5][1] = (z.ve1.x[5 * 4] << 24) | (z.ve1.x[5 * 4 + 1] << 16) | (z.ve1.x[5 * 4 + 2] << 8);
 
-    if (mpc_sha256_verify(w, 55 * 8, randCount, countY, z.ve, z.ve1, randomness, z) == 1)
+    if (mpc_sha256_verify(w, results, 55 * 8, randCount, countY, randomness, z) == 1)
     {
         *error = true;
         printf("Failing at %d", __LINE__);
@@ -396,10 +441,16 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
     // xoring with secret commitment
     uint32_t t0[2], t1[2], tmp[2];
     index_in_x = 23;
+
     for (int i = 0; i < 8; i++)
     {
-        /* Il faut chercher le result de MPCsha256 puis xor avec x[23 à 54], puis vérifier que le résultat est bien dans
-          a.yp[e][index_in_a] et a.yp[(e + 1) % 3][index_in_a] */
+        memcpy(&t0[0], results[0] + i * 4, 4);
+        memcpy(&t0[1], results[1] + i * 4, 4);
+
+        memcpy(&t1[0], z.ve.x + index_in_x + i * 4, 4);
+        memcpy(&t1[1], z.ve1.x + index_in_x + i * 4, 4);
+
+        mpc_XOR2(t0, t1, tmp);
 
         if ((tmp[0] != a.yp[e][index_in_a]) || (tmp[1] != a.yp[(e + 1) % 3][index_in_a]))
         {
@@ -409,6 +460,132 @@ void verify(unsigned char digest[32], bool *error, a a, int e, z z)
         index_in_a++;
     }
 
+    // Verifying Signature
+    uint32_t verif_result[2][8];
+    int index_in_pub_key = 0;
+
+    for (int i = 0; i < 256; i++)
+    {
+        index_in_x = 55 + 32 * i;
+        uint32_t w[64][2] = {0};
+        for (int j = 0; j < 8; j++)
+        {
+            w[j][0] = (z.ve.x[index_in_x + 4 * j] << 24) | (z.ve.x[index_in_x + 4 * j + 1] << 16) |
+                      (z.ve.x[index_in_x + 4 * j + 2] << 8) | z.ve.x[index_in_x + 4 * j + 3];
+
+            w[j][1] = (z.ve1.x[index_in_x + 4 * j] << 24) | (z.ve1.x[index_in_x + 4 * j + 1] << 16) |
+                      (z.ve1.x[index_in_x + 4 * j + 2] << 8) | z.ve1.x[index_in_x + 4 * j + 3];
+        }
+
+        if (mpc_sha256_verify(w, results, 32 * 8, randCount, countY, randomness, z) == 1)
+        {
+            *error = true;
+            printf("Failing at %d", __LINE__);
+        }
+
+        for (int j = 0; j < 8; j++)
+        {
+            memcpy(&t0[0], results[0] + i * 4, 4);
+            memcpy(&t0[1], results[1] + i * 4, 4);
+
+            memcpy(&t1[0], z.ve.x + index_in_x + j * 4, 4);
+            memcpy(&t1[1], z.ve1.x + index_in_x + j * 4, 4);
+
+            mpc_XOR2(t0, t1, tmp);
+
+            for (int k = 0; k < 2; k++)
+            {
+                verif_result[k][j] = tmp[k];
+            }
+        }
+
+        uint32_t mask[2];
+        int byte = i >> 3;
+        int bit = i & 7;
+        int bit_pos;
+
+        uint8_t v = z.ve.x[23 + byte];
+        bit_pos = 7 - (i & 7);
+        uint32_t b = (v >> bit_pos) & 1;
+        mask[0] = 0u - b;
+
+        v = z.ve1.x[23 + byte];
+        bit_pos = 7 - (i & 7);
+        b = (v >> bit_pos) & 1;
+        mask[1] = 0u - b;
+
+        for (int j = 0; j < 8; j++)
+        {
+            t0[0] = verif_result[0][j];
+            t0[1] = verif_result[1][j];
+
+            if (mpc_AND_verify(t0, mask, tmp, z.ve, z.ve1, randomness, randCount, countY) == 1)
+            {
+                *error = true;
+                printf("Failing at %d", __LINE__);
+            }
+            for (int k = 0; k < 2; k++)
+            {
+                verif_result[k][j] = tmp[k];
+            }
+        }
+
+        for (int j = 0; j < 8; j++)
+        {
+            t0[0] = verif_result[0][j];
+            t0[1] = verif_result[1][j];
+
+            memcpy(&t1[0], results[0] + 4 * j, 4);
+            memcpy(&t1[1], results[1] + 4 * j, 4);
+
+            mpc_XOR2(t0, t1, tmp);
+
+            for (int k = 0; k < 2; k++)
+            {
+                verif_result[k][j] = tmp[k];
+            }
+        }
+
+        // Xoring with public_key[i]
+
+        for (int j = 0; j < 8; j++)
+        {
+            if (e == 0)
+            {
+                t0[0] = verif_result[0][j];
+                memcpy(&t1[0], public_key + index_in_pub_key + 4 * j, 4);
+
+                tmp[0] = t0[0] ^ t1[0];
+
+                verif_result[0][j] = tmp[0];
+            }
+
+            if (e == 2)
+            {
+                t0[0] = verif_result[1][j];
+
+                memcpy(&t1[0], public_key + index_in_pub_key + 4 * j, 4);
+
+                tmp[0] = t0[0] ^ t1[0];
+
+                verif_result[1][j] = tmp[0];
+            }
+            index_in_pub_key += 32;
+
+            tmp[0] = verif_result[0][j];
+            tmp[1] = verif_result[1][j];
+
+            if ((tmp[0] != a.yp[e][index_in_a]) || (tmp[1] != a.yp[(e + 1) % 3][index_in_a]))
+            {
+                *error = true;
+                printf("Failing at %d, index_in_a = %d\n", __LINE__, index_in_a);
+            }
+            index_in_a++;
+        }
+    }
+
+    free(results[0]);
+    free(results[1]);
     free(randCount);
     free(countY);
     return;

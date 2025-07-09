@@ -28,6 +28,33 @@ int main(void)
 
     FILE *file;
 
+    // Getting public_key
+    int c1;
+    int c2;
+    file = fopen("public_key.txt", "r");
+    unsigned char public_key[8192];
+    for (int i = 0; i < 256; ++i)
+        for (int j = 0; j < 32; ++j)
+        {
+            c1 = fgetc(file);
+            while (c1 == '\n')
+            {
+                c1 = fgetc(file);
+            }
+
+            c2 = fgetc(file);
+            while (c2 == '\n')
+            {
+                c2 = fgetc(file);
+            }
+
+            c1 = (c1 <= '9') ? c1 - '0' : c1 - 'A' + 10;
+            c2 = (c2 <= '9') ? c2 - '0' : c2 - 'A' + 10;
+
+            public_key[i * 32 + j] = (char)((c1 << 4) | c2);
+        }
+    fclose(file);
+
     char outputFile[3 * sizeof(int) + 8];
     sprintf(outputFile, "proof.bin");
     file = fopen(outputFile, "rb");
@@ -75,7 +102,7 @@ int main(void)
 #pragma omp parallel for
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
-        verify(digest, &error, as[i], es[i], zs[i]);
+        verify(digest, public_key, &error, as[i], es[i], zs[i]);
     }
 
     openmp_thread_cleanup();
