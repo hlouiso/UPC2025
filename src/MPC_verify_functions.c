@@ -473,7 +473,6 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
 
         uint32_t mask[2];
         int byte = i >> 3;
-        int bit = i & 7;
         int bit_pos;
 
         uint8_t v = z.ve.x[23 + byte];

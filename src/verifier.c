@@ -63,17 +63,17 @@ int main(void)
     a *as = malloc(NUM_ROUNDS * sizeof(a));
     z *zs = malloc(NUM_ROUNDS * sizeof(z));
 
-    fread(as, sizeof(a), NUM_ROUNDS, file);
+    size_t items_read = fread(as, sizeof(a), NUM_ROUNDS, file);
 
     for (int i = 0; i < NUM_ROUNDS; ++i)
     {
-        fread(&zs[i], sizeof(z), 1, file);
+        items_read = fread(&zs[i], sizeof(z), 1, file);
 
         zs[i].ve.y = malloc(ySize * sizeof(uint32_t));
         zs[i].ve1.y = malloc(ySize * sizeof(uint32_t));
 
-        fread(zs[i].ve.y, sizeof(uint32_t), ySize, file);
-        fread(zs[i].ve1.y, sizeof(uint32_t), ySize, file);
+        items_read = fread(zs[i].ve.y, sizeof(uint32_t), ySize, file);
+        items_read = fread(zs[i].ve1.y, sizeof(uint32_t), ySize, file);
     }
 
     fclose(file);

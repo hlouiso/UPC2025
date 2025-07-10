@@ -232,7 +232,6 @@ int main(void)
     for (int i = 0; i < NUM_ROUNDS; i++)
     {
         zs[i] = prove(es[i], keys[i], rs[i], localViews[i]);
-        printf("es[%d] = %d\n", i, es[i]);
     }
 
     // Writing to file

@@ -4,7 +4,7 @@ OPENSSL_DIR = ../third_party/openssl/openssl-1.0.2l
 CFLAGS  = -O2 -Wall -fopenmp -I$(OPENSSL_DIR)/include
 LDFLAGS = -fopenmp $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a -ldl
 
-all: ../prover ../verifier ../sign
+all: ../prover ../verifier ../sign ../commitment_gen
 
 ../prover: prover.o shared.o MPC_prove_functions.o building_views.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
@@ -33,8 +33,17 @@ MPC_verify_functions.o: MPC_verify_functions.c MPC_verify_functions.h shared.h
 ../sign: WOTS_Sign.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+WOTS_Sign.o: WOTS_Sign.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+../commitment_gen: commitment_gen.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+commitment_gen.o: commitment_gen.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o src/*.o ../prover ../verifier ../sign ../out* ../proof.bin
+	rm -f *.o src/*.o ../prover ../verifier ../sign ../out* ../proof.bin ../*.txt ../commitment_gen
