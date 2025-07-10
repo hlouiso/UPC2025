@@ -28,10 +28,10 @@ int main(void)
     char hex_input[65] = {0};
     int bits[NUM_BITS] = {0};
 
-    printf("Entrez le commitment en hexadécimal MAJUSCULE (64 caractères) : ");
+    printf("Enter the commitment in UPPERCASE hexadecimal (64 hex chars):\n");
     if (scanf("%64s", hex_input) != 1)
     {
-        fprintf(stderr, "Erreur : lecture impossible.\n");
+        fprintf(stderr, "Errorr : file reading failed.\n");
         return EXIT_FAILURE;
     }
 
@@ -49,7 +49,7 @@ int main(void)
     {
         if (RAND_bytes(priv[i], SEED_LEN) != 1)
         {
-            fprintf(stderr, "Erreur : RAND_bytes a échoué.\n");
+            fprintf(stderr, "Error : RAND_bytes has failed.\n");
             return EXIT_FAILURE;
         }
         SHA256(priv[i], SEED_LEN, pub[i]);

@@ -56,7 +56,7 @@ int main(void)
     char hexInput[2 * COMMIT_KEY_LEN + 2];
     unsigned char commitment_key[COMMIT_KEY_LEN];
 
-    printf("\nEnter your commitment key (46 hex chars):\n");
+    printf("\nEnter your commitment key in UPPERCASE hexadecimal (46 hex chars):\n");
     fgets(hexInput, sizeof(hexInput), stdin);
 
     for (int i = 0; i < COMMIT_KEY_LEN; i++)
@@ -70,7 +70,7 @@ int main(void)
     char hexInput2[2 * COMMIT_LEN + 2];
     unsigned char commitment[COMMIT_LEN];
 
-    printf("\nEnter your commitment (64 hex chars):\n");
+    printf("\nEnter the commitment in UPPERCASE hexadecimal (64 hex chars):\n");
     fgets(hexInput2, sizeof(hexInput2), stdin);
 
     for (int i = 0; i < COMMIT_LEN; i++)
