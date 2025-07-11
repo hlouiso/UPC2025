@@ -1,34 +1,9 @@
-#include "shared.h"
-#include <omp.h>
-#include <stdbool.h>
+#include "MPC_prove_functions.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define CH(e, f, g) ((e & f) ^ ((~e) & g)) // choose f if e = 0 and g if e = 1
-
-int NUM_ROUNDS = 136;
-
-uint32_t rand32()
-{
-    uint32_t x;
-    x = rand() & 0xff;
-    x |= (rand() & 0xff) << 8;
-    x |= (rand() & 0xff) << 16;
-    x |= (rand() & 0xff) << 24;
-
-    return x;
-}
-
-void printbits(uint32_t n)
-{
-    if (n)
-    {
-        printbits(n >> 1);
-        printf("%d", n & 1);
-    }
-}
 
 void mpc_XOR(uint32_t x[3], uint32_t y[3], uint32_t z[3])
 {
@@ -70,8 +45,13 @@ void mpc_ADD(uint32_t x[3], uint32_t y[3], uint32_t z[3], unsigned char *randomn
     uint32_t c[3] = {0};
     uint32_t r[3] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount),
                      getRandom32(randomness[2], *randCount)};
-    *randCount += 4;
 
+    // if (first)
+    // {
+    //     printf("r[0] = %08X, r[1] = %08X, r[2] = %08X\n", r[0], r[1], r[2]);
+    // }
+
+    *randCount += 4;
     uint8_t a[3], b[3];
 
     uint8_t t;
@@ -148,92 +128,6 @@ void mpc_ADDK(uint32_t x[3], uint32_t y, uint32_t z[3], unsigned char *randomnes
     *countY += 1;
 }
 
-// sha256 for commitments
-int sha256(unsigned char *result, unsigned char *input, int numBits)
-{
-    uint32_t hA[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
-
-    if (numBits > 447)
-    {
-        printf("Input too long, aborting!");
-        return -1;
-    }
-    int chars = numBits >> 3;
-    unsigned char *chunk = calloc(64, 1); // 512 bits
-    memcpy(chunk, input, chars);
-    chunk[chars] = 0x80;
-    // Last 8 chars used for storing length of input without padding, in big-endian.
-    // Since we only care for one block, we are safe with just using last 9 bits and 0'ing the rest
-
-    // chunk[60] = numBits >> 24;
-    // chunk[61] = numBits >> 16;
-    chunk[62] = numBits >> 8;
-    chunk[63] = numBits;
-
-    uint32_t w[64];
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        w[i] = (chunk[i * 4] << 24) | (chunk[i * 4 + 1] << 16) | (chunk[i * 4 + 2] << 8) | chunk[i * 4 + 3];
-    }
-
-    uint32_t s0, s1;
-    for (i = 16; i < 64; i++)
-    {
-        s0 = RIGHTROTATE(w[i - 15], 7) ^ RIGHTROTATE(w[i - 15], 18) ^ (w[i - 15] >> 3);
-        s1 = RIGHTROTATE(w[i - 2], 17) ^ RIGHTROTATE(w[i - 2], 19) ^ (w[i - 2] >> 10);
-        w[i] = w[i - 16] + s0 + w[i - 7] + s1;
-    }
-
-    uint32_t a, b, c, d, e, f, g, h, temp1, temp2, maj;
-    a = hA[0];
-    b = hA[1];
-    c = hA[2];
-    d = hA[3];
-    e = hA[4];
-    f = hA[5];
-    g = hA[6];
-    h = hA[7];
-
-    for (i = 0; i < 64; i++)
-    {
-        s1 = RIGHTROTATE(e, 6) ^ RIGHTROTATE(e, 11) ^ RIGHTROTATE(e, 25);
-
-        temp1 = h + s1 + CH(e, f, g) + k[i] + w[i];
-        s0 = RIGHTROTATE(a, 2) ^ RIGHTROTATE(a, 13) ^ RIGHTROTATE(a, 22);
-
-        maj = (a & (b ^ c)) ^ (b & c);
-        temp2 = s0 + maj;
-
-        h = g;
-        g = f;
-        f = e;
-        e = d + temp1;
-        d = c;
-        c = b;
-        b = a;
-        a = temp1 + temp2;
-    }
-
-    hA[0] += a;
-    hA[1] += b;
-    hA[2] += c;
-    hA[3] += d;
-    hA[4] += e;
-    hA[5] += f;
-    hA[6] += g;
-    hA[7] += h;
-
-    for (i = 0; i < 8; i++)
-    {
-        result[i * 4] = (hA[i] >> 24);
-        result[i * 4 + 1] = (hA[i] >> 16);
-        result[i * 4 + 2] = (hA[i] >> 8);
-        result[i * 4 + 3] = hA[i];
-    }
-    return 0;
-}
-
 void mpc_RIGHTROTATE(uint32_t x[], int i, uint32_t z[])
 {
     z[0] = RIGHTROTATE(x[0], i);
@@ -271,19 +165,10 @@ void mpc_CH(uint32_t e[], uint32_t f[3], uint32_t g[3], uint32_t z[3], unsigned 
     mpc_XOR(t0, g, z);
 }
 
-int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits, unsigned char *randomness[3],
-               View views[3], int *countY)
+void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness[3], unsigned char *results[3],
+                View views[3], int *countY, int *randCount)
 {
-
-    if (numBits > 447)
-    {
-        printf("Input too long, aborting!");
-        return -1;
-    }
-
-    int *randCount = calloc(1, sizeof(int));
-
-    int chars = numBits >> 3;
+    int chars = numBits >> 3; // Dividing by 8 = getting Bytes number
     unsigned char *chunks[3];
     uint32_t w[64][3];
 
@@ -294,7 +179,6 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         chunks[i][chars] = 0x80;
         chunks[i][62] = numBits >> 8;
         chunks[i][63] = numBits;
-        memcpy(views[i].x, chunks[i], 64);
 
         for (int j = 0; j < 16; j++)
         {
@@ -323,6 +207,15 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         mpc_ADD(w[j - 7], t1, t1, randomness, randCount, views, countY);
         mpc_ADD(t1, s1, w[j], randomness, randCount, views, countY);
     }
+    // if (first)
+    // {
+    //     // Affichage des valeurs de w en hexadécimal
+    //     for (int i = 0; i < 64; i++)
+    //     {
+    //         printf("w[%d][0] = %08X, w[%d][1] = %08X, w[%d][2] = %08X\n", i, w[i][0], i, w[i][1], i, w[i][2]);
+    //     }
+    // }
+    // first = false;
 
     uint32_t a[3] = {hA[0], hA[0], hA[0]};
     uint32_t b[3] = {hA[1], hA[1], hA[1]};
@@ -393,240 +286,15 @@ int mpc_sha256(unsigned char *results[3], unsigned char *inputs[3], int numBits,
         results[1][i * 4 + 3] = hHa[i][1];
         results[2][i * 4 + 3] = hHa[i][2];
     }
-    free(randCount);
 
-    return 0;
-}
-
-int writeToFile(char filename[], void *data, int size, int numItems)
-{
-    FILE *file;
-
-    file = fopen(filename, "wb");
-    if (!file)
-    {
-        printf("Unable to open file!");
-        return 1;
-    }
-    fwrite(data, size, numItems, file);
-    fclose(file);
-    return 0;
-}
-
-int secretShare(unsigned char *input, int numBytes, unsigned char output[3][numBytes])
-{
-    if (RAND_bytes(output[0], numBytes) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-    }
-    if (RAND_bytes(output[1], numBytes) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-    }
-    for (int j = 0; j < numBytes; j++)
-    {
-        output[2][j] = input[j] ^ output[0][j] ^ output[1][j];
-    }
-    return 0;
-}
-
-a commit(int numBytes, unsigned char shares[3][numBytes], unsigned char *randomness[3], View views[3])
-{
-
-    unsigned char *inputs[3];
-    inputs[0] = shares[0];
-    inputs[1] = shares[1];
-    inputs[2] = shares[2];
-    unsigned char *hashes[3];
-    hashes[0] = malloc(32);
-    hashes[1] = malloc(32);
-    hashes[2] = malloc(32);
-
-    int *countY = calloc(1, sizeof(int));
-    mpc_sha256(hashes, inputs, numBytes * 8, randomness, views, countY);
-
-    // Explicitly add y to view
     for (int i = 0; i < 8; i++)
     {
-        views[0].y[*countY] = (hashes[0][i * 4] << 24) | (hashes[0][i * 4 + 1] << 16) | (hashes[0][i * 4 + 2] << 8) |
-                              hashes[0][i * 4 + 3];
-
-        views[1].y[*countY] = (hashes[1][i * 4] << 24) | (hashes[1][i * 4 + 1] << 16) | (hashes[1][i * 4 + 2] << 8) |
-                              hashes[1][i * 4 + 3];
-        views[2].y[*countY] = (hashes[2][i * 4] << 24) | (hashes[2][i * 4 + 1] << 16) | (hashes[2][i * 4 + 2] << 8) |
-                              hashes[2][i * 4 + 3];
+        views[0].y[*countY] = (results[0][i * 4] << 24) | (results[0][i * 4 + 1] << 16) | (results[0][i * 4 + 2] << 8) |
+                              results[0][i * 4 + 3];
+        views[1].y[*countY] = (results[1][i * 4] << 24) | (results[1][i * 4 + 1] << 16) | (results[1][i * 4 + 2] << 8) |
+                              results[1][i * 4 + 3];
+        views[2].y[*countY] = (results[2][i * 4] << 24) | (results[2][i * 4 + 1] << 16) | (results[2][i * 4 + 2] << 8) |
+                              results[2][i * 4 + 3];
         *countY += 1;
     }
-    free(countY);
-    free(hashes[0]);
-    free(hashes[1]);
-    free(hashes[2]);
-
-    uint32_t *result1 = malloc(32);
-    output(views[0], result1);
-    uint32_t *result2 = malloc(32);
-    output(views[1], result2);
-    uint32_t *result3 = malloc(32);
-    output(views[2], result3);
-
-    a a;
-    memcpy(a.yp[0], result1, 32);
-    memcpy(a.yp[1], result2, 32);
-    memcpy(a.yp[2], result3, 32);
-
-    free(result1);
-    free(result2);
-    free(result3);
-
-    return a;
-}
-
-z prove(int e, unsigned char keys[3][16], unsigned char rs[3][4], View views[3])
-{
-    z z;
-    memcpy(z.ke, keys[e], 16);
-    memcpy(z.ke1, keys[(e + 1) % 3], 16);
-    z.ve = views[e];
-    z.ve1 = views[(e + 1) % 3];
-    memcpy(z.re, rs[e], 4);
-    memcpy(z.re1, rs[(e + 1) % 3], 4);
-
-    return z;
-}
-
-int main(void)
-{
-    setbuf(stdout, NULL);
-    srand((unsigned)time(NULL));
-    init_EVP();
-    openmp_thread_setup(); // OpenMP = Multi Threading
-
-    unsigned char garbage[4];
-    if (RAND_bytes(garbage, 4) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
-    }
-
-    printf("Enter the string to be hashed (Max 55 characters): ");
-    char userInput[55]; // 55 is max length as we only support 447 bits = 55.875 bytes
-    fgets(userInput, sizeof(userInput), stdin);
-
-    int i = strlen(userInput) - 1;
-    printf("String length: %d\n", i);
-
-    printf("Iterations of SHA: %d\n", NUM_ROUNDS);
-
-    unsigned char input[i];
-    for (int j = 0; j < i; j++)
-    {
-        input[j] = userInput[j];
-    }
-
-    unsigned char rs[NUM_ROUNDS][3][4];
-    unsigned char keys[NUM_ROUNDS][3][16];
-    a as[NUM_ROUNDS];
-    View localViews[NUM_ROUNDS][3];
-
-    // Generating keys
-    if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
-    }
-    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
-    }
-
-    // Sharing secrets
-    unsigned char shares[NUM_ROUNDS][3][i];
-    if (RAND_bytes(shares, NUM_ROUNDS * 3 * i) != 1)
-    {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
-    }
-#pragma omp parallel for
-    for (int k = 0; k < NUM_ROUNDS; k++)
-    {
-
-        for (int j = 0; j < i; j++)
-        {
-            shares[k][2][j] = input[j] ^ shares[k][0][j] ^ shares[k][1][j];
-        }
-    }
-
-    // Generating randomness
-    unsigned char *randomness[NUM_ROUNDS][3];
-#pragma omp parallel for
-    for (int k = 0; k < NUM_ROUNDS; k++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            randomness[k][j] = malloc(2912 * sizeof(unsigned char));
-            getAllRandomness(keys[k][j], randomness[k][j]);
-        }
-    }
-
-    // Running MPC-SHA2
-#pragma omp parallel for
-    for (int k = 0; k < NUM_ROUNDS; k++)
-    {
-        as[k] = commit(i, shares[k], randomness[k], localViews[k]);
-        for (int j = 0; j < 3; j++)
-        {
-            free(randomness[k][j]);
-        }
-    }
-
-    // Committing
-#pragma omp parallel for
-    for (int k = 0; k < NUM_ROUNDS; k++)
-    {
-        unsigned char hash1[SHA256_DIGEST_LENGTH];
-        H(keys[k][0], localViews[k][0], rs[k][0], &hash1);
-        memcpy(as[k].h[0], &hash1, 32);
-        H(keys[k][1], localViews[k][1], rs[k][1], &hash1);
-        memcpy(as[k].h[1], &hash1, 32);
-        H(keys[k][2], localViews[k][2], rs[k][2], &hash1);
-        memcpy(as[k].h[2], &hash1, 32);
-    }
-
-    // Generating E
-    int es[NUM_ROUNDS];
-    uint32_t finalHash[8];
-    for (int j = 0; j < 8; j++)
-    {
-        finalHash[j] = as[0].yp[0][j] ^ as[0].yp[1][j] ^ as[0].yp[2][j];
-    }
-    H3(finalHash, as, NUM_ROUNDS, es);
-
-    // Packing Z
-    z *zs = malloc(sizeof(z) * NUM_ROUNDS);
-
-#pragma omp parallel for
-    for (int i = 0; i < NUM_ROUNDS; i++)
-    {
-        zs[i] = prove(es[i], keys[i], rs[i], localViews[i]);
-    }
-
-    // Writing to file
-    FILE *file;
-
-    char outputFile[3 * sizeof(int) + 8];
-    sprintf(outputFile, "out%i.bin", NUM_ROUNDS);
-    file = fopen(outputFile, "wb");
-    if (!file)
-    {
-        printf("Unable to open file!");
-        return 1;
-    }
-    fwrite(as, sizeof(a), NUM_ROUNDS, file);
-    fwrite(zs, sizeof(z), NUM_ROUNDS, file);
-
-    fclose(file);
-
-    free(zs);
-    return EXIT_SUCCESS;
 }
