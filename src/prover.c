@@ -250,6 +250,8 @@ int main(void)
     fclose(file);
     free(as);
     free(zs);
+    openmp_thread_cleanup();
+    cleanup_EVP();
 
     printf("================================================================\n");
     if (error)

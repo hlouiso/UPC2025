@@ -36,10 +36,10 @@ MPC_verify_functions.o: MPC_verify_functions.c MPC_verify_functions.h shared.h
 WOTS_Sign.o: WOTS_Sign.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-../commitment_gen: commitment_gen.o
+../commitment_gen: commitment_gen.o shared.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-commitment_gen.o: commitment_gen.c
+commitment_gen.o: commitment_gen.c shared.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.c

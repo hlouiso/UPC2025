@@ -1,3 +1,5 @@
+#include "shared.h"
+
 #include <openssl/rand.h>
 #include <openssl/sha.h>
 #include <stdio.h>
@@ -16,7 +18,7 @@ void print_hex(const unsigned char *data, size_t len)
 int main()
 {
     char message[1024];
-    unsigned char r[R_LEN];
+    unsigned char r[R_LEN] = {0};
     unsigned char digest1[SHA256_DIGEST_LENGTH];
     unsigned char final_input[SHA256_DIGEST_LENGTH + R_LEN];
     unsigned char commitment[SHA256_DIGEST_LENGTH];
@@ -32,6 +34,7 @@ int main()
     if (message[len - 1] == '\n')
         message[len - 1] = '\0';
 
+    init_EVP();
     if (RAND_bytes(r, R_LEN) != 1)
     {
         fprintf(stderr, "RAND_bytes failed\n");
@@ -50,6 +53,8 @@ int main()
 
     printf("\nCommitment = SHA256(SHA256(m) || r):\n");
     print_hex(commitment, SHA256_DIGEST_LENGTH);
+
+    cleanup_EVP();
 
     return 0;
 }
