@@ -18,7 +18,7 @@ static int hexval(char c)
 
 static void write_hex_line(FILE *fp, const unsigned char *data, size_t len)
 {
-    for (size_t i = 0; i < len; ++i)
+    for (size_t i = 0; i < len; i++)
         fprintf(fp, "%02X", data[i]);
     fputc('\n', fp);
 }
@@ -35,7 +35,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    for (int i = 0; i < 64; ++i)
+    for (int i = 0; i < 64; i++)
     {
         int v = hexval(hex_input[i]);
         for (int b = 0; b < 4; ++b)
@@ -45,7 +45,7 @@ int main(void)
     unsigned char priv[NUM_BITS][SEED_LEN];
     unsigned char pub[NUM_BITS][SHA256_DIGEST_LENGTH];
 
-    for (int i = 0; i < NUM_BITS; ++i)
+    for (int i = 0; i < NUM_BITS; i++)
     {
         if (RAND_bytes(priv[i], SEED_LEN) != 1)
         {
@@ -56,7 +56,7 @@ int main(void)
     }
 
     FILE *fp = fopen("signature.txt", "w");
-    for (int i = 0; i < NUM_BITS; ++i)
+    for (int i = 0; i < NUM_BITS; i++)
     {
         if (bits[i] == 0)
             write_hex_line(fp, priv[i], SEED_LEN);
@@ -66,10 +66,10 @@ int main(void)
     fclose(fp);
 
     fp = fopen("public_key.txt", "w");
-    for (int i = 0; i < NUM_BITS; ++i)
+    for (int i = 0; i < NUM_BITS; i++)
         write_hex_line(fp, pub[i], SHA256_DIGEST_LENGTH);
 
     fclose(fp);
-    puts("signature.txt generated.\n");
+    printf("\nsignature.txt generated.\n");
     return EXIT_SUCCESS;
 }
