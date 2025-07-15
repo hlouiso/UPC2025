@@ -20,8 +20,8 @@ To build the project, use the `make` command. This will generate four binaries:
 
 1. `commitment_gen`: This binary is on the CLIENT side
                      It will get a random commitment key 'r' and print it in UPPERCASE hexadecimal (46
-                     characters).\nAfter that, it will compute the commitment = SHA256(SHA256(m) || r) and print it in
-                     UPPERCASE hexadecimal (64 characters).\n"
+                     characters). After that, it will compute the commitment = SHA256(SHA256(m) || r) and print it in
+                     UPPERCASE hexadecimal (64 characters).
                      No file.txt will be generated, you have to copy the output manually.
 
 2. `sign`:  This binary is on the SERVER side and generates a WOTS signature for a given commitment.
