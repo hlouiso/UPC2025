@@ -26,8 +26,19 @@ z prove(int e, unsigned char keys[3][16], unsigned char rs[3][4], View views[3])
     return z;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    // help display
+    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0))
+    {
+        printf("\nThis binary is on the CLIENT side.\n"
+               "It builds a ZKBoo-based zero-knowledge proof of knowledge of a WOTS signature of a secretly known "
+               "256 bits message commitment, which one we know the key.\n"
+               "The result will be saved in 'proof.bin'.\n"
+               "You will need to run the MPC verifier to verify the proof.\n");
+        return 0;
+    }
+
     setbuf(stdout, NULL);
     srand((unsigned)time(NULL));
     init_EVP();

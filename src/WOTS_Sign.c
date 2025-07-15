@@ -23,15 +23,29 @@ static void write_hex_line(FILE *fp, const unsigned char *data, size_t len)
     fputc('\n', fp);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    // help display
+    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0))
+    {
+        printf(
+            "\nThis binary is on the SERVER side and generates a WOTS signature for a given commitment.\n"
+            "It will sign your previously-generated 256-bits commitment, using a WOTS algorithm.\n"
+            "To this end, it will generate a random private key and a public key.\n"
+            "Only the public key will be saved in 'public_key.txt', and you will need to build/verify the final blind "
+            "signature.\n"
+            "Also, it will generate a file 'signature.txt' with the WOTS signature.\n"
+            "You can then use the MPC prover to generate a proof of knowledge of the signature.\n");
+        return 0;
+    }
+
     char hex_input[65] = {0};
     int bits[NUM_BITS] = {0};
 
     printf("Enter the commitment in UPPERCASE hexadecimal (64 hex chars):\n");
     if (scanf("%64s", hex_input) != 1)
     {
-        fprintf(stderr, "Errorr : file reading failed.\n");
+        fprintf(stderr, "Error : file reading failed.\n");
         return EXIT_FAILURE;
     }
 

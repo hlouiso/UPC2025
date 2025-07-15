@@ -7,8 +7,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    // help display
+    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0))
+    {
+        printf(
+            "\nThis binary is used by anyone the verify the zero-knowledge proof of knowledge stored in 'proof.bin'.\n"
+            "This proof is used as a blind signature for a WOTS signature of a secretly known 256 bits message "
+            "commitment.\n");
+        return 0;
+    }
+
     setbuf(stdout, NULL);
     init_EVP();
     openmp_thread_setup();

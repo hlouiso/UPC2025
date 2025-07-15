@@ -15,8 +15,19 @@ void print_hex(const unsigned char *data, size_t len)
     printf("\n");
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    // help display
+    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0))
+    {
+        printf("\nThis binary is on the CLIENT side\n"
+               "It will get a random commitment key 'r' and print it in UPPERCASE hexadecimal (46 "
+               "characters).\nAfter that, it will compute the commitment = SHA256(SHA256(m) || r) and print it in "
+               "UPPERCASE hexadecimal (64 characters).\n"
+               "No file.txt will be generated, you have to copy the output manually.\n");
+        return 0;
+    }
+
     char message[1024];
     unsigned char r[R_LEN] = {0};
     unsigned char digest1[SHA256_DIGEST_LENGTH];
