@@ -15,7 +15,8 @@ int main(int argc, char *argv[])
         printf(
             "\nThis binary is used by anyone to verify the zero-knowledge proof of knowledge stored in 'proof.bin'.\n"
             "This proof is used as a blind signature for a WOTS signature of a secretly known 256 bits message "
-            "commitment.\n");
+            "commitment.\n"
+            "To verify the proof, we need the public key, stored in 'public_key.txt'.\n");
         return 0;
     }
 

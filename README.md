@@ -40,7 +40,7 @@ To build the project, use the `make` command. This will generate four binaries:
 
 4. `verifier`: This binary is used by anyone to verify the zero-knowledge proof of knowledge stored in 'proof.bin'.
                This proof is used as a blind signature for a WOTS signature of a secretly known 256 bits message
-               commitment.
+               commitment. To verify the proof, we need the public key, stored in 'public_key.txt'.
 
 ### References
 
