@@ -1,4 +1,3 @@
-CC = gcc
 OPENSSL_DIR = ../third_party/openssl/openssl-1.0.2l
 
 CFLAGS  = -O2 -Wall -fopenmp -I$(OPENSSL_DIR)/include

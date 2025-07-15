@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0))
     {
         printf(
-            "\nThis binary is used by anyone the verify the zero-knowledge proof of knowledge stored in 'proof.bin'.\n"
+            "\nThis binary is used by anyone to verify the zero-knowledge proof of knowledge stored in 'proof.bin'.\n"
             "This proof is used as a blind signature for a WOTS signature of a secretly known 256 bits message "
             "commitment.\n");
         return 0;
