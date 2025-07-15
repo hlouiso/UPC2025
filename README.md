@@ -12,7 +12,7 @@ This project was carried out as part of my final internship for the Master's deg
 
 ### Third-Party Dependencies
 
-This project includes a `third_party/` directory, which contains an older version of OpenSSL (1.0.2). This specific version was necessary to ensure compatibility with the original implementation from Aarhus University. While this dependency is outdated, it was required to faithfully reproduce and build upon their work.
+This project includes a `third_party/` directory, which contains an older version of OpenSSL (1.0.2). This specific version was necessary to ensure compatibility with the original implementation from Aarhus University. 
 
 ### Help
 
