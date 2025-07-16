@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
     unsigned char garbage[4];
     if (RAND_bytes(garbage, 4) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        return 1;
     }
 
     // Getting m
@@ -150,10 +150,10 @@ int main(int argc, char *argv[])
     // Generating keys
     unsigned char keys[NUM_ROUNDS][3][16];
 
-    if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
+    if (RAND_bytes((unsigned char *)keys, NUM_ROUNDS * 3 * 16) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        return 1;
     }
 
     // Getting public_key
@@ -183,10 +183,10 @@ int main(int argc, char *argv[])
 
     // Sharing secrets
     unsigned char shares[NUM_ROUNDS][3][INPUT_LEN];
-    if (RAND_bytes(shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
+    if (RAND_bytes((unsigned char *)shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        return 1;
     }
 
     View localViews[NUM_ROUNDS][3];
@@ -236,22 +236,23 @@ int main(int argc, char *argv[])
 
     // Committing the views
     unsigned char rs[NUM_ROUNDS][3][4]; // Commit keys
-    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
+    if (RAND_bytes((unsigned char *)rs, NUM_ROUNDS * 3 * 4) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        free(as);
+        return 1;
     }
 
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
         unsigned char hash1[SHA256_DIGEST_LENGTH];
-        H(keys[k][0], localViews[k][0], rs[k][0], &hash1);
-        memcpy(as[k].h[0], &hash1, 32);
-        H(keys[k][1], localViews[k][1], rs[k][1], &hash1);
-        memcpy(as[k].h[1], &hash1, 32);
-        H(keys[k][2], localViews[k][2], rs[k][2], &hash1);
-        memcpy(as[k].h[2], &hash1, 32);
+        H(keys[k][0], localViews[k][0], rs[k][0], hash1);
+        memcpy(as[k].h[0], hash1, 32);
+        H(keys[k][1], localViews[k][1], rs[k][1], hash1);
+        memcpy(as[k].h[1], hash1, 32);
+        H(keys[k][2], localViews[k][2], rs[k][2], hash1);
+        memcpy(as[k].h[2], hash1, 32);
     }
 
     // Generating E

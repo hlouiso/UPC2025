@@ -178,11 +178,11 @@ int main(int argc, char *argv[])
 
     if (error)
     {
-        fprintf(stderr, "Error: invalid signature\n");
+        fprintf(stderr, "\nError: invalid signature proof\n\n");
         exit(EXIT_FAILURE);
     }
 
-    printf("\nProof verified successfully.\n\n");
+    printf("\nSignature proof verified successfully.\n\n");
 
     return EXIT_SUCCESS;
 }
