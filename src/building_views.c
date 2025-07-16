@@ -97,7 +97,6 @@ a building_views(unsigned char digest[32], unsigned char shares[3][INPUT_LEN], u
         // Building MASK: getting a share of i-th bit of the shared commitment and extending it in 32bits word
         uint32_t mask[3];
         int byte = i >> 3;
-        int bit = i & 7;
 
         for (int j = 0; j < 3; j++)
         {

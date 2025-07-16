@@ -54,8 +54,16 @@ int main(int argc, char *argv[])
     // Getting m
     char *message = NULL;
     size_t bufferSize = 0;
+
     printf("\nPlease enter your message:\n");
-    getline(&message, &bufferSize, stdin);
+    int length = getline(&message, &bufferSize, stdin);
+    if (length == -1)
+    {
+        perror("Error reading input");
+        free(message);
+        return 1;
+    }
+
     message[strlen(message) - 1] = '\0'; // to remove '\n' at the end
 
     // Computing message digest
@@ -67,8 +75,13 @@ int main(int argc, char *argv[])
     char hexInput[2 * COMMIT_KEY_LEN + 2];
     unsigned char commitment_key[COMMIT_KEY_LEN];
 
+    bool read_error = false;
+
     printf("\nEnter your commitment key in UPPERCASE hexadecimal (46 hex chars):\n");
-    fgets(hexInput, sizeof(hexInput), stdin);
+    if (fgets(hexInput, sizeof(hexInput), stdin) == NULL)
+    {
+        read_error = true;
+    }
 
     for (int i = 0; i < COMMIT_KEY_LEN; i++)
     {
@@ -82,7 +95,16 @@ int main(int argc, char *argv[])
     unsigned char commitment[COMMIT_LEN];
 
     printf("\nEnter the commitment in UPPERCASE hexadecimal (64 hex chars):\n");
-    fgets(hexInput2, sizeof(hexInput2), stdin);
+    if (fgets(hexInput2, sizeof(hexInput2), stdin) == NULL)
+    {
+        read_error = true;
+    }
+
+    if (read_error)
+    {
+        printf("Error reading input. Please ensure you enter the commitment key and commitment correctly.\n");
+        return 1;
+    }
 
     for (int i = 0; i < COMMIT_LEN; i++)
     {
