@@ -255,9 +255,11 @@ int main(int argc, char *argv[])
         memcpy(as[k].h[2], hash1, 32);
     }
 
-    // Generating E
+    // Generating e
     int es[NUM_ROUNDS];
-    H3(digest, as, NUM_ROUNDS, es);
+    uint32_t y[8];
+    memcpy(y, digest, 32);
+    H3(y, as, NUM_ROUNDS, es);
 
     // Packing Z
     z *zs = malloc(sizeof(z) * NUM_ROUNDS);

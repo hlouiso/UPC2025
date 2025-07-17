@@ -141,7 +141,10 @@ int main(int argc, char *argv[])
     }
 
     fclose(file);
+
     /* ============================================================================================================= */
+
+    /* ============================================== Verifying proof ============================================== */
 
     // Verifying Circuit Output
     uint32_t xor_val;
@@ -159,8 +162,11 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Generating e
     int es[NUM_ROUNDS];
-    H3(digest, as, NUM_ROUNDS, es);
+    uint32_t y[8];
+    memcpy(y, digest, 32);
+    H3(y, as, NUM_ROUNDS, es);
     bool error = false;
 
 #pragma omp parallel for
@@ -168,6 +174,8 @@ int main(int argc, char *argv[])
     {
         verify(digest, public_key, &error, as[i], es[i], zs[i]);
     }
+
+    /* ============================================================================================================= */
 
     free(as);
     free(zs);
