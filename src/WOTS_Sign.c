@@ -70,6 +70,12 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen("signature.txt", "w");
+    if (fp == NULL)
+    {
+        perror("Error opening file");
+        return 1;
+    }
+
     for (int i = 0; i < NUM_BITS; i++)
     {
         if (bits[i] == 0)
@@ -80,6 +86,12 @@ int main(int argc, char *argv[])
     fclose(fp);
 
     fp = fopen("public_key.txt", "w");
+    if (fp == NULL)
+    {
+        perror("Error opening file");
+        return 1;
+    }
+
     for (int i = 0; i < NUM_BITS; i++)
         write_hex_line(fp, pub[i], SHA256_DIGEST_LENGTH);
 

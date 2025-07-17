@@ -47,15 +47,23 @@ int main(int argc, char *argv[])
     unsigned char garbage[4];
     if (RAND_bytes(garbage, 4) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        return 1;
     }
 
     // Getting m
     char *message = NULL;
     size_t bufferSize = 0;
+
     printf("\nPlease enter your message:\n");
-    getline(&message, &bufferSize, stdin);
+    int length = getline(&message, &bufferSize, stdin);
+    if (length == -1)
+    {
+        perror("Error reading input");
+        free(message);
+        return 1;
+    }
+
     message[strlen(message) - 1] = '\0'; // to remove '\n' at the end
 
     // Computing message digest
@@ -67,8 +75,13 @@ int main(int argc, char *argv[])
     char hexInput[2 * COMMIT_KEY_LEN + 2];
     unsigned char commitment_key[COMMIT_KEY_LEN];
 
+    bool read_error = false;
+
     printf("\nEnter your commitment key in UPPERCASE hexadecimal (46 hex chars):\n");
-    fgets(hexInput, sizeof(hexInput), stdin);
+    if (fgets(hexInput, sizeof(hexInput), stdin) == NULL)
+    {
+        read_error = true;
+    }
 
     for (int i = 0; i < COMMIT_KEY_LEN; i++)
     {
@@ -82,7 +95,16 @@ int main(int argc, char *argv[])
     unsigned char commitment[COMMIT_LEN];
 
     printf("\nEnter the commitment in UPPERCASE hexadecimal (64 hex chars):\n");
-    fgets(hexInput2, sizeof(hexInput2), stdin);
+    if (fgets(hexInput2, sizeof(hexInput2), stdin) == NULL)
+    {
+        read_error = true;
+    }
+
+    if (read_error)
+    {
+        printf("Error reading input. Please ensure you enter the commitment key and commitment correctly.\n");
+        return 1;
+    }
 
     for (int i = 0; i < COMMIT_LEN; i++)
     {
@@ -128,10 +150,10 @@ int main(int argc, char *argv[])
     // Generating keys
     unsigned char keys[NUM_ROUNDS][3][16];
 
-    if (RAND_bytes(keys, NUM_ROUNDS * 3 * 16) != 1)
+    if (RAND_bytes((unsigned char *)keys, NUM_ROUNDS * 3 * 16) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        return 1;
     }
 
     // Getting public_key
@@ -161,10 +183,10 @@ int main(int argc, char *argv[])
 
     // Sharing secrets
     unsigned char shares[NUM_ROUNDS][3][INPUT_LEN];
-    if (RAND_bytes(shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
+    if (RAND_bytes((unsigned char *)shares, NUM_ROUNDS * 3 * INPUT_LEN) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        return 1;
     }
 
     View localViews[NUM_ROUNDS][3];
@@ -214,27 +236,30 @@ int main(int argc, char *argv[])
 
     // Committing the views
     unsigned char rs[NUM_ROUNDS][3][4]; // Commit keys
-    if (RAND_bytes(rs, NUM_ROUNDS * 3 * 4) != 1)
+    if (RAND_bytes((unsigned char *)rs, NUM_ROUNDS * 3 * 4) != 1)
     {
-        printf("RAND_bytes failed crypto, aborting\n");
-        return 0;
+        perror("RAND_bytes failed crypto, aborting\n");
+        free(as);
+        return 1;
     }
 
 #pragma omp parallel for
     for (int k = 0; k < NUM_ROUNDS; k++)
     {
         unsigned char hash1[SHA256_DIGEST_LENGTH];
-        H(keys[k][0], localViews[k][0], rs[k][0], &hash1);
-        memcpy(as[k].h[0], &hash1, 32);
-        H(keys[k][1], localViews[k][1], rs[k][1], &hash1);
-        memcpy(as[k].h[1], &hash1, 32);
-        H(keys[k][2], localViews[k][2], rs[k][2], &hash1);
-        memcpy(as[k].h[2], &hash1, 32);
+        H(keys[k][0], localViews[k][0], rs[k][0], hash1);
+        memcpy(as[k].h[0], hash1, 32);
+        H(keys[k][1], localViews[k][1], rs[k][1], hash1);
+        memcpy(as[k].h[1], hash1, 32);
+        H(keys[k][2], localViews[k][2], rs[k][2], hash1);
+        memcpy(as[k].h[2], hash1, 32);
     }
 
-    // Generating E
+    // Generating e
     int es[NUM_ROUNDS];
-    H3(digest, as, NUM_ROUNDS, es);
+    uint32_t y[8];
+    memcpy(y, digest, 32);
+    H3(y, as, NUM_ROUNDS, es);
 
     // Packing Z
     z *zs = malloc(sizeof(z) * NUM_ROUNDS);
