@@ -75,10 +75,6 @@ void H(unsigned char k[16], View v, unsigned char r[4], unsigned char hash[SHA25
 
 void H3(uint32_t y[8], a *as, int s, int *es);
 
-void output(View v, uint32_t *result);
-
-void reconstruct(uint32_t *y0, uint32_t *y1, uint32_t *y2, uint32_t *result);
-
 extern omp_lock_t *locks;
 
 void openmp_locking_callback(int mode, int type, char *file, int line);

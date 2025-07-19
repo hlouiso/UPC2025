@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 
     fwrite(as, sizeof(a), NUM_ROUNDS, file);
 
-    for (int i = 0; i < NUM_ROUNDS; ++i)
+    for (int i = 0; i < NUM_ROUNDS; i++)
     {
         fwrite(&zs[i], sizeof(z), 1, file);
 

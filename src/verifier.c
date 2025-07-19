@@ -131,16 +131,15 @@ int main(int argc, char *argv[])
         }
     }
 
+    fclose(file);
+
     if (read_error)
     {
         perror("Error in proof.bin\n");
-        fclose(file);
         free(as);
         free(zs);
         return 1;
     }
-
-    fclose(file);
 
     /* ============================================================================================================= */
 
@@ -157,6 +156,8 @@ int main(int argc, char *argv[])
             {
                 printf("Unexpected non-zero output at round %d\n", xor_val);
                 fprintf(stderr, "Error: invalid signature\n");
+                free(as);
+                free(zs);
                 exit(EXIT_FAILURE);
             }
         }

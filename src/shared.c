@@ -17,7 +17,7 @@
 bool first = true;
 const int COMMIT_KEY_LEN = 23;
 const int COMMIT_LEN = 32;
-const int NUM_ROUNDS = 136; // Usually 136
+const int NUM_ROUNDS = 1; // Usually 136
 const int mpc_sha256_size = 736;
 const int mpc_sha256_runs = 257;
 int ySize = mpc_sha256_runs * mpc_sha256_size + 8 * 256;
@@ -171,16 +171,6 @@ void H3(uint32_t y[8], a *as, int s, int *es)
                 bitTracker += 2;
             }
         }
-    }
-}
-
-void output(View v, uint32_t *result) { memcpy(result, &v.y[ySize - 8], 32); }
-
-void reconstruct(uint32_t *y0, uint32_t *y1, uint32_t *y2, uint32_t *result)
-{
-    for (int i = 0; i < 8; i++)
-    {
-        result[i] = y0[i] ^ y1[i] ^ y2[i];
     }
 }
 

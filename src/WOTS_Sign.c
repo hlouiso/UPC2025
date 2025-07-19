@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
             bits[i * 4 + b] = (v >> (3 - b)) & 1;
     }
 
-    unsigned char priv[NUM_BITS][SEED_LEN];
-    unsigned char pub[NUM_BITS][SHA256_DIGEST_LENGTH];
+    unsigned char priv[NUM_BITS][SEED_LEN] = {0};
+    unsigned char pub[NUM_BITS][SHA256_DIGEST_LENGTH] = {0};
 
     for (int i = 0; i < NUM_BITS; i++)
     {
