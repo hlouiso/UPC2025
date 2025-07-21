@@ -32,7 +32,7 @@ int mpc_ADD_verify(uint32_t x[2], uint32_t y[2], uint32_t z[2], View ve, View ve
 {
     uint32_t r[2] = {getRandom32(randomness[0], *randCount), getRandom32(randomness[1], *randCount)};
     *randCount += 4;
-    // printf("r[0] = %08X, r[1] = %08X\n", r[0], r[1]);
+
     uint8_t a[2], b[2];
 
     uint8_t t;
@@ -350,19 +350,6 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
     getAllRandomness(z.ke, randomness[0], Random_Bytes_Needed);
     getAllRandomness(z.ke1, randomness[1], Random_Bytes_Needed);
 
-    // printf("******\n");
-    // for (int i = 0; i < 16; i++)
-    // {
-    //     printf("%02X", randomness[0][i]);
-    // }
-    // printf("\n");
-    // for (int i = 0; i < 16; i++)
-    // {
-    //     printf("%02X", randomness[1][i]);
-    // }
-    // printf("\n");
-    // printf("******\n");
-
     int *randCount = calloc(1, sizeof(int));
     int *countY = calloc(1, sizeof(int));
 
@@ -553,16 +540,6 @@ void verify(unsigned char digest[32], unsigned char public_key[8192], bool *erro
             index_in_a++;
         }
         index_in_pub_key += 32;
-
-        // for (int bloc = 0; bloc < 2; bloc++)
-        // {
-        //     printf("Bloc %d :\n", bloc);
-        //     for (int i = 0; i < 8; i++)
-        //     {
-        //         printf("%08x", verif_result[bloc][i]);
-        //     }
-        //     printf("\n");
-        // }
     }
 
     free(results[0]);

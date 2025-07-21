@@ -17,7 +17,7 @@
 bool first = true;
 const int COMMIT_KEY_LEN = 23;
 const int COMMIT_LEN = 32;
-const int NUM_ROUNDS = 1; // Usually 136
+const int NUM_ROUNDS = 137; // Usually 137
 const int mpc_sha256_size = 736;
 const int mpc_sha256_runs = 257;
 int ySize = mpc_sha256_runs * mpc_sha256_size + 8 * 256;

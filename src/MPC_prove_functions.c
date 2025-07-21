@@ -207,15 +207,6 @@ void mpc_sha256(unsigned char *inputs[3], int numBits, unsigned char *randomness
         mpc_ADD(w[j - 7], t1, t1, randomness, randCount, views, countY);
         mpc_ADD(t1, s1, w[j], randomness, randCount, views, countY);
     }
-    // if (first)
-    // {
-    //     // Affichage des valeurs de w en hexadécimal
-    //     for (int i = 0; i < 64; i++)
-    //     {
-    //         printf("w[%d][0] = %08X, w[%d][1] = %08X, w[%d][2] = %08X\n", i, w[i][0], i, w[i][1], i, w[i][2]);
-    //     }
-    // }
-    // first = false;
 
     uint32_t a[3] = {hA[0], hA[0], hA[0]};
     uint32_t b[3] = {hA[1], hA[1], hA[1]};
