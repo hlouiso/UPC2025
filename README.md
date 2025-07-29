@@ -7,7 +7,6 @@ This project was carried out as part of my final internship for the Master's deg
 ### Project Structure
 
 - `src/`: Contains the main source code.
-- `tests/`: Contains unit tests.
 - `README.md`: Project documentation.
 
 ### Third-Party Dependencies
